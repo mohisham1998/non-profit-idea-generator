@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO users (email, name, password, login_method, role, status, first_signed_in, last_signed_in) \nVALUES ('ammaraluofi@gmail.com', 'عمار العوفي', '$2a$10$vFqXvKjKwqXvKjKwqXvKjOqXvKjKwqXvKjKwqXvKjKwqXvKjKwqXv', 'internal', 'admin', 'approved', NOW(), NOW())\nON DUPLICATE KEY UPDATE \n  name = 'عمار العوفي',\n  password = '$2a$10$vFqXvKjKwqXvKjKwqXvKjOqXvKjKwqXvKjKwqXvKjKwqXvKjKwqXv',\n  login_method = 'internal',\n  role = 'admin',\n  status = 'approved',\n  last_signed_in = NOW();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute INSERT INTO users (email, name, password, login_method, role, status, first_signed_in, last_signed_in) \nVALUES ('ammaraluofi@gmail.com', 'عمار العوفي', '$2a$10$vFqXvKjKwqXvKjKwqXvKjOqXvKjKwqXvKjKwqXvKjKwqXvKjKwqXv', 'internal', 'admin', 'approved', NOW(), NOW())\nON DUPLICATE KEY UPDATE \n  name = 'عمار العوفي',\n  password = '$2a$10$vFqXvKjKwqXvKjKwqXvKjOqXvKjKwqXvKjKwqXvKjKwqXvKjKwqXv',\n  login_method = 'internal',\n  role = 'admin',\n  status = 'approved',\n  last_signed_in = NOW();",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'login_method' in 'field list'"
+  ]
+}

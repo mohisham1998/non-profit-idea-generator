@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO users (email, name, password, role, status) \nVALUES ('ammaraluofi@gmail.com', 'عمار العوفي', '$2b$10$BIkLjIgj17NLzh.qinwiL.DM9cIuczZtE1XpeQiDe.0nMa/gCQsqO', 'admin', 'approved')\nON DUPLICATE KEY UPDATE \n  name = 'عمار العوفي',\n  password = '$2b$10$BIkLjIgj17NLzh.qinwiL.DM9cIuczZtE1XpeQiDe.0nMa/gCQsqO',\n  role = 'admin',\n  status = 'approved';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute INSERT INTO users (email, name, password, role, status) \nVALUES ('ammaraluofi@gmail.com', 'عمار العوفي', '$2b$10$BIkLjIgj17NLzh.qinwiL.DM9cIuczZtE1XpeQiDe.0nMa/gCQsqO', 'admin', 'approved')\nON DUPLICATE KEY UPDATE \n  name = 'عمار العوفي',\n  password = '$2b$10$BIkLjIgj17NLzh.qinwiL.DM9cIuczZtE1XpeQiDe.0nMa/gCQsqO',\n  role = 'admin',\n  status = 'approved';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1569
+}

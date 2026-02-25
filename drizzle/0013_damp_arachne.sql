@@ -1,0 +1,1 @@
+ALTER TABLE `ideas` ADD `selectedName` varchar(255);

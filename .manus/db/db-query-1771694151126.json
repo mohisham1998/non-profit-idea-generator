@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO users (email, password, role, status, organizationName, phoneNumber, createdAt, updatedAt) VALUES ('a_a_99999@hotmail.com', '11223344', 'admin', 'approved', 'مسار الابتكار', '+966', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE role = 'admin', status = 'approved';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute INSERT INTO users (email, password, role, status, organizationName, phoneNumber, createdAt, updatedAt) VALUES ('a_a_99999@hotmail.com', '11223344', 'admin', 'approved', 'مسار الابتكار', '+966', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE role = 'admin', status = 'approved';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1549
+}

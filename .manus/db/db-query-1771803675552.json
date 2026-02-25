@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, programDescription, isApproved, approvedAt FROM ideas WHERE id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute SELECT id, programDescription, isApproved, approvedAt FROM ideas WHERE id = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "programDescription": "برنامج تدريبي لتاهيل الشباب في مجال الريادة الاجتماعية",
+      "isApproved": "0",
+      "approvedAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tprogramDescription\tisApproved\tapprovedAt\n1\tبرنامج تدريبي لتاهيل الشباب في مجال الريادة الاجتماعية\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1562
+}

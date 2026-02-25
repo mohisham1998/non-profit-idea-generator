@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, email, name, role, status FROM users WHERE email = 'ammaraluofi@gmail.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute SELECT id, email, name, role, status FROM users WHERE email = 'ammaraluofi@gmail.com';",
+  "rows": [
+    {
+      "id": "1",
+      "email": "ammaraluofi@gmail.com",
+      "name": "عمار العوفي",
+      "role": "admin",
+      "status": "approved"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\trole\tstatus\n1\tammaraluofi@gmail.com\tعمار العوفي\tadmin\tapproved\n",
+  "stderr": "",
+  "execution_time_ms": 1541
+}

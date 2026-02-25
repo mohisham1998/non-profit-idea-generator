@@ -1,0 +1,1202 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  src: url("https://fonts.gstatic.com/s/ibmplexsansarabic/v12/Qw3CZRtWPQCuHme67tEYUIx3Kh0PHR9N6YNe3PC5eMlAMg0.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  src: url("https://fonts.gstatic.com/s/ibmplexsansarabic/v12/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YPy_dCTVsVJKxTs.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  src: url("https://fonts.gstatic.com/s/ibmplexsansarabic/v12/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YPO-tCTVsVJKxTs.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  src: url("https://fonts.gstatic.com/s/ibmplexsansarabic/v12/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YOq-dCTVsVJKxTs.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --font-sans: "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  /* ألوان مسار الابتكار - تدرج برتقالي-سماوي */
+  --primary: oklch(0.70 0.15 55); /* برتقالي */
+  --primary-foreground: oklch(0.99 0.002 240);
+  --secondary-color: oklch(0.70 0.12 195); /* سماوي */
+  --sidebar-primary: oklch(0.70 0.15 55);
+  --sidebar-primary-foreground: oklch(0.99 0.002 240);
+  --chart-1: oklch(0.70 0.15 55); /* برتقالي */
+  --chart-2: oklch(0.70 0.12 195); /* سماوي */
+  --chart-3: oklch(0.65 0.14 75); /* أصفر */
+  --chart-4: oklch(0.60 0.10 180); /* أزرق فاتح */
+  --chart-5: oklch(0.55 0.08 40); /* برتقالي داكن */
+  --radius: 0.75rem;
+  --background: oklch(0.99 0.002 240);
+  --foreground: oklch(0.20 0.02 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.02 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.02 260);
+  --secondary: oklch(0.95 0.01 195);
+  --secondary-foreground: oklch(0.25 0.02 260);
+  --muted: oklch(0.96 0.005 240);
+  --muted-foreground: oklch(0.50 0.02 260);
+  --accent: oklch(0.92 0.04 55); /* برتقالي فاتح */
+  --accent-foreground: oklch(0.35 0.12 55);
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(0.99 0.002 240);
+  --border: oklch(0.90 0.02 195);
+  --input: oklch(0.90 0.01 240);
+  --ring: oklch(0.70 0.15 55);
+  --sidebar: oklch(0.98 0.005 240);
+  --sidebar-foreground: oklch(0.20 0.02 260);
+  --sidebar-accent: oklch(0.92 0.04 55);
+  --sidebar-accent-foreground: oklch(0.35 0.12 55);
+  --sidebar-border: oklch(0.90 0.02 195);
+  --sidebar-ring: oklch(0.70 0.15 55);
+}
+
+.dark {
+  --primary: var(--color-blue-700);
+  --primary-foreground: var(--color-blue-50);
+  --sidebar-primary: var(--color-blue-500);
+  --sidebar-primary-foreground: var(--color-blue-50);
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.85 0.005 65);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.85 0.005 65);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.85 0.005 65);
+  --secondary: oklch(0.24 0.006 286.033);
+  --secondary-foreground: oklch(0.7 0.005 65);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground:  oklch(0.92 0.005 65);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.488 0.243 264.376);
+  --chart-1: var(--color-blue-300);
+  --chart-2: var(--color-blue-500);
+  --chart-3: var(--color-blue-600);
+  --chart-4: var(--color-blue-700);
+  --chart-5: var(--color-blue-800);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.85 0.005 65);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground:  oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.488 0.243 264.376);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    direction: rtl;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    line-height: 1.7;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  /**
+   * Custom container utility that centers content and adds responsive padding.
+   *
+   * This overrides Tailwind's default container behavior to:
+   * - Auto-center content (mx-auto)
+   * - Add responsive horizontal padding
+   * - Set max-width for large screens
+   *
+   * Usage: <div className="container">...</div>
+   *
+   * For custom widths, use max-w-* utilities directly:
+   * <div className="max-w-6xl mx-auto px-4">...</div>
+   */
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem; /* 16px - mobile padding */
+    padding-right: 1rem;
+  }
+
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem; /* 32px - desktop padding */
+      padding-right: 2rem;
+      max-width: 1280px; /* Standard content width */
+    }
+  }
+}
+
+/* Elegant gradient backgrounds - مسار الابتكار */
+.gradient-primary {
+  background: linear-gradient(135deg, oklch(0.70 0.15 55) 0%, oklch(0.70 0.12 195) 100%);
+}
+
+.gradient-subtle {
+  background: linear-gradient(180deg, oklch(0.98 0.02 55 / 0.3) 0%, oklch(0.98 0.02 195 / 0.3) 100%);
+}
+
+.gradient-masar {
+  background: linear-gradient(135deg, oklch(0.70 0.15 55) 0%, oklch(0.65 0.14 75) 50%, oklch(0.70 0.12 195) 100%);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -12px oklch(0.45 0.15 170 / 0.15);
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.96 0.005 240);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.05 170);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.10 170);
+}
+
+/* Loading spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* ===== تأثيرات حركية متقدمة ===== */
+
+/* تأثير الظهور من الأسفل */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+/* تأثير الظهور من اليمين */
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-right {
+  animation: slideRight 0.6s ease-out forwards;
+}
+
+/* تأثير الظهور من اليسار */
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.6s ease-out forwards;
+}
+
+/* تأثير التكبير */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+/* تأثير النبض */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* تأثير التوهج */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px oklch(0.45 0.15 170 / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px oklch(0.45 0.15 170 / 0.5), 0 0 30px oklch(0.45 0.15 170 / 0.3);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* تأثير الطفو */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* تأثير الكتابة التدريجية */
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-typing {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing 2s steps(40, end);
+}
+
+/* تأثيرات التأخير */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-800 { animation-delay: 0.8s; }
+
+/* تأثير hover للبطاقات المحسن */
+.card-3d {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow: 
+    0 20px 40px -15px oklch(0.45 0.15 170 / 0.2),
+    0 10px 20px -10px oklch(0 0 0 / 0.1);
+}
+
+/* تأثير الأزرار المحسن */
+.btn-animated {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-animated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-animated:hover::before {
+  left: 100%;
+}
+
+.btn-animated:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px oklch(0.45 0.15 170 / 0.4);
+}
+
+/* تأثير التموج عند النقر */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: '';
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: oklch(1 0 0 / 0.3);
+  border-radius: 50%;
+  transform: scale(0);
+  pointer-events: none;
+}
+
+.ripple-effect:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+/* تأثير الخلفية المتحركة */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background: linear-gradient(-45deg, 
+    oklch(0.45 0.15 170), 
+    oklch(0.55 0.12 200), 
+    oklch(0.50 0.10 150), 
+    oklch(0.60 0.08 180)
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+}
+
+/* تأثير الظهور عند التمرير */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease-out;
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* تأثير البطاقة الزجاجية */
+.glass-card {
+  background: oklch(1 0 0 / 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid oklch(1 0 0 / 0.2);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: oklch(1 0 0 / 0.85);
+  box-shadow: 0 8px 32px oklch(0 0 0 / 0.1);
+}
+
+/* تأثير النص المتوهج */
+.text-glow {
+  text-shadow: 0 0 10px oklch(0.45 0.15 170 / 0.5);
+}
+
+/* تأثير الأيقونات المتحركة */
+.icon-bounce {
+  transition: transform 0.3s ease;
+}
+
+.icon-bounce:hover {
+  animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-5px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-3px); }
+}
+
+/* تأثير الحدود المتحركة */
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: oklch(0.45 0.15 170 / 0.3);
+  }
+  50% {
+    border-color: oklch(0.45 0.15 170 / 0.8);
+  }
+}
+
+.border-animated {
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+
+/* ===== تأثيرات زجاجية متقدمة (Glassmorphism) ===== */
+
+/* البطاقة الزجاجية الأساسية */
+.glass {
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.6) 0%, oklch(1 0 0 / 0.4) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(1 0 0 / 0.3);
+  border-radius: 1rem;
+  box-shadow: 
+    0 8px 32px oklch(0 0 0 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass:hover {
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.75) 0%, oklch(1 0 0 / 0.55) 100%);
+  box-shadow: 
+    0 16px 48px oklch(0 0 0 / 0.12),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+  transform: translateY(-4px);
+}
+
+/* البطاقة الزجاجية الخضراء */
+.glass-green {
+  background: linear-gradient(135deg, oklch(0.95 0.03 170 / 0.7) 0%, oklch(0.92 0.05 170 / 0.5) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(0.45 0.15 170 / 0.2);
+  border-radius: 1rem;
+  box-shadow: 
+    0 8px 32px oklch(0.45 0.15 170 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-green:hover {
+  background: linear-gradient(135deg, oklch(0.95 0.04 170 / 0.85) 0%, oklch(0.92 0.06 170 / 0.65) 100%);
+  box-shadow: 
+    0 16px 48px oklch(0.45 0.15 170 / 0.15),
+    inset 0 1px 0 oklch(1 0 0 / 0.4);
+  transform: translateY(-4px);
+}
+
+/* البطاقة الزجاجية الداكنة */
+.glass-dark {
+  background: linear-gradient(135deg, oklch(0.25 0.02 260 / 0.8) 0%, oklch(0.20 0.02 260 / 0.6) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  border-radius: 1rem;
+  box-shadow: 
+    0 8px 32px oklch(0 0 0 / 0.2),
+    inset 0 1px 0 oklch(1 0 0 / 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* البطاقة الزجاجية الملونة */
+.glass-accent {
+  background: linear-gradient(135deg, oklch(0.92 0.08 170 / 0.5) 0%, oklch(0.88 0.10 200 / 0.3) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(0.45 0.15 170 / 0.15);
+  border-radius: 1rem;
+  box-shadow: 
+    0 8px 32px oklch(0.45 0.15 170 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.25);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-accent:hover {
+  background: linear-gradient(135deg, oklch(0.92 0.10 170 / 0.65) 0%, oklch(0.88 0.12 200 / 0.45) 100%);
+  box-shadow: 
+    0 16px 48px oklch(0.45 0.15 170 / 0.12),
+    inset 0 1px 0 oklch(1 0 0 / 0.35);
+  transform: translateY(-4px);
+}
+
+/* بطاقة القسم الزجاجية */
+.section-glass {
+  background: linear-gradient(180deg, oklch(1 0 0 / 0.5) 0%, oklch(0.98 0.005 240 / 0.3) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 0.25);
+  border-radius: 1.25rem;
+  box-shadow: 
+    0 4px 24px oklch(0 0 0 / 0.06),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.section-glass:hover {
+  box-shadow: 
+    0 8px 32px oklch(0 0 0 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.6);
+}
+
+/* حاوية زجاجية للنماذج */
+.form-glass {
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.7) 0%, oklch(0.98 0.005 240 / 0.5) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid oklch(1 0 0 / 0.35);
+  border-radius: 1.5rem;
+  box-shadow: 
+    0 12px 40px oklch(0 0 0 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.6);
+  padding: 2rem;
+}
+
+/* شريط زجاجي علوي */
+.header-glass {
+  background: linear-gradient(180deg, oklch(1 0 0 / 0.85) 0%, oklch(1 0 0 / 0.7) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid oklch(1 0 0 / 0.2);
+  box-shadow: 0 4px 20px oklch(0 0 0 / 0.05);
+}
+
+/* زر زجاجي */
+.btn-glass {
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.6) 0%, oklch(1 0 0 / 0.4) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid oklch(1 0 0 / 0.3);
+  border-radius: 0.75rem;
+  box-shadow: 
+    0 4px 16px oklch(0 0 0 / 0.06),
+    inset 0 1px 0 oklch(1 0 0 / 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-glass:hover {
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.8) 0%, oklch(1 0 0 / 0.6) 100%);
+  box-shadow: 
+    0 8px 24px oklch(0 0 0 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+  transform: translateY(-2px);
+}
+
+/* تأثير زجاجي للعناصر الصغيرة */
+.chip-glass {
+  background: oklch(1 0 0 / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid oklch(1 0 0 / 0.25);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* تأثير زجاجي للقوائم */
+.list-glass > * {
+  background: oklch(1 0 0 / 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid oklch(1 0 0 / 0.2);
+  border-radius: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.list-glass > *:hover {
+  background: oklch(1 0 0 / 0.6);
+  transform: translateX(-4px);
+}
+
+/* تأثير زجاجي للجداول */
+.table-glass {
+  background: oklch(1 0 0 / 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(1 0 0 / 0.25);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.table-glass th {
+  background: oklch(0.45 0.15 170 / 0.1);
+  border-bottom: 1px solid oklch(1 0 0 / 0.2);
+}
+
+.table-glass tr:hover td {
+  background: oklch(0.45 0.15 170 / 0.05);
+}
+
+/* خلفية زجاجية للصفحة */
+.page-glass-bg {
+  position: relative;
+}
+
+.page-glass-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, oklch(0.45 0.15 170 / 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, oklch(0.55 0.12 200 / 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, oklch(0.50 0.10 150 / 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+
+/* ===== تأثيرات تفاعلية محسنة للبطاقات الزجاجية ===== */
+
+/* تأثير الرفع والتوهج عند hover */
+.glass-interactive {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-interactive::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, oklch(1 0 0 / 0) 0%, oklch(1 0 0 / 0.1) 50%, oklch(1 0 0 / 0) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.glass-interactive:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 
+    0 25px 50px -12px oklch(0 0 0 / 0.15),
+    0 0 0 1px oklch(1 0 0 / 0.3),
+    inset 0 1px 0 oklch(1 0 0 / 0.6);
+}
+
+.glass-interactive:hover::before {
+  opacity: 1;
+}
+
+/* تأثير التوهج الملون */
+.glass-glow {
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.glass-glow::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, 
+    oklch(0.45 0.15 170 / 0.3) 0%, 
+    oklch(0.55 0.12 200 / 0.2) 50%, 
+    oklch(0.45 0.15 170 / 0.3) 100%
+  );
+  opacity: 0;
+  z-index: -1;
+  filter: blur(15px);
+  transition: opacity 0.4s ease;
+}
+
+.glass-glow:hover::after {
+  opacity: 1;
+}
+
+.glass-glow:hover {
+  transform: translateY(-6px);
+  box-shadow: 
+    0 20px 40px -15px oklch(0.45 0.15 170 / 0.2),
+    0 0 30px oklch(0.45 0.15 170 / 0.1);
+}
+
+/* تأثير الانعكاس اللامع */
+.glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shine::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    oklch(1 0 0 / 0) 0%,
+    oklch(1 0 0 / 0) 40%,
+    oklch(1 0 0 / 0.4) 50%,
+    oklch(1 0 0 / 0) 60%,
+    oklch(1 0 0 / 0) 100%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.8s ease;
+  pointer-events: none;
+}
+
+.glass-shine:hover::before {
+  transform: rotate(45deg) translateX(100%);
+}
+
+/* تأثير الحدود المتحركة */
+.glass-border-animate {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.glass-border-animate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, 
+    oklch(0.45 0.15 170 / 0.5) 0%, 
+    oklch(1 0 0 / 0.2) 25%,
+    oklch(0.55 0.12 200 / 0.5) 50%,
+    oklch(1 0 0 / 0.2) 75%,
+    oklch(0.45 0.15 170 / 0.5) 100%
+  );
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: borderRotate 3s linear infinite paused;
+}
+
+.glass-border-animate:hover::before {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+@keyframes borderRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* تأثير النبض الخفيف */
+.glass-pulse {
+  transition: all 0.3s ease;
+}
+
+.glass-pulse:hover {
+  animation: glassPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes glassPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 32px oklch(0 0 0 / 0.08);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 12px 40px oklch(0.45 0.15 170 / 0.15);
+  }
+}
+
+/* تأثير التدرج المتحرك */
+.glass-gradient-shift {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-gradient-shift::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    oklch(0.45 0.15 170 / 0) 0%,
+    oklch(0.45 0.15 170 / 0.1) 50%,
+    oklch(0.45 0.15 170 / 0) 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.glass-gradient-shift:hover::before {
+  transform: translateX(100%);
+}
+
+/* تأثير الظل الديناميكي */
+.glass-shadow-dynamic {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-shadow-dynamic:hover {
+  transform: translateY(-10px) rotateX(5deg);
+  box-shadow: 
+    0 30px 60px -20px oklch(0 0 0 / 0.2),
+    0 15px 30px -15px oklch(0.45 0.15 170 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+}
+
+/* تأثير الزجاج المتجمد */
+.glass-frost {
+  transition: all 0.4s ease;
+}
+
+.glass-frost:hover {
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.8) 0%, oklch(0.98 0.01 170 / 0.6) 100%);
+  transform: translateY(-6px);
+  box-shadow: 
+    0 20px 50px -15px oklch(0 0 0 / 0.15),
+    inset 0 0 20px oklch(1 0 0 / 0.3);
+}
+
+/* تأثير مشترك للبطاقات الرئيسية */
+.glass-card-enhanced {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    oklch(1 0 0 / 0) 0%,
+    oklch(1 0 0 / 0) 40%,
+    oklch(1 0 0 / 0.3) 50%,
+    oklch(1 0 0 / 0) 60%,
+    oklch(1 0 0 / 0) 100%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.8s ease;
+  pointer-events: none;
+}
+
+.glass-card-enhanced::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, 
+    oklch(0.45 0.15 170 / 0.4) 0%, 
+    oklch(1 0 0 / 0.1) 50%,
+    oklch(0.55 0.12 200 / 0.4) 100%
+  );
+  opacity: 0;
+  z-index: -1;
+  filter: blur(20px);
+  transition: opacity 0.4s ease;
+}
+
+.glass-card-enhanced:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 
+    0 25px 50px -12px oklch(0 0 0 / 0.15),
+    0 0 0 1px oklch(1 0 0 / 0.3),
+    inset 0 1px 0 oklch(1 0 0 / 0.6);
+}
+
+.glass-card-enhanced:hover::before {
+  transform: rotate(45deg) translateX(100%);
+}
+
+.glass-card-enhanced:hover::after {
+  opacity: 1;
+}
+
+/* تأثير الأيقونات داخل البطاقات */
+.glass-icon-container {
+  transition: all 0.3s ease;
+}
+
+.glass-card-enhanced:hover .glass-icon-container {
+  transform: scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 4px 8px oklch(0.45 0.15 170 / 0.3));
+}
+
+
+/* ===== تحسينات التجاوب على الجوال ===== */
+
+/* تحسين الأزرار على الجوال */
+@media (max-width: 640px) {
+  .btn-mobile {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+  
+  /* تحسين حجم النص على الجوال */
+  .text-responsive {
+    font-size: clamp(0.875rem, 4vw, 1rem);
+  }
+  
+  /* تحسين المسافات على الجوال */
+  .space-mobile {
+    gap: 0.5rem;
+  }
+  
+  /* إخفاء العناصر غير الضرورية على الجوال */
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  /* تحسين البطاقات على الجوال */
+  .card-mobile {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  /* تحسين الجداول على الجوال */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* تحسين النماذج على الجوال */
+  input, textarea, select {
+    font-size: 16px !important; /* منع التكبير التلقائي على iOS */
+  }
+}
+
+/* تحسينات للشاشات المتوسطة (تابلت) */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .tablet-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tablet-padding {
+    padding: 1.5rem;
+  }
+}
+
+/* تحسينات للشاشات الكبيرة */
+@media (min-width: 1024px) {
+  .desktop-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .desktop-padding {
+    padding: 2rem;
+  }
+}
+
+/* تحسين الشريط الجانبي على الجوال */
+@media (max-width: 768px) {
+  .sidebar-mobile {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* تحسين الأداء على الأجهزة المحمولة */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* تحسين اللمس على الأجهزة المحمولة */
+@media (hover: none) and (pointer: coarse) {
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* إزالة تأثيرات hover على الأجهزة اللمسية */
+  .card-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* تحسين طباعة الصفحة */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break {
+    page-break-before: always;
+  }
+  
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+}

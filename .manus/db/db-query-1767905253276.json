@@ -1,0 +1,9 @@
+{
+  "query": "CREATE INDEX IF NOT EXISTS idx_ideas_user_created ON ideas(userId, createdAt DESC)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute CREATE INDEX IF NOT EXISTS idx_ideas_user_created ON ideas(userId, createdAt DESC)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1975
+}

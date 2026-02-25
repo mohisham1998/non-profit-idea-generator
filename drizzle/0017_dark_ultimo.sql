@@ -1,0 +1,1 @@
+ALTER TABLE `sustainability_analysis` ADD `fundingSources` text;

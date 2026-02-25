@@ -1,0 +1,9 @@
+{
+  "query": "CREATE INDEX IF NOT EXISTS idx_risk_tracking_tracking_id ON risk_tracking(projectTrackingId)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user DxE53ezqqMqTWoo.a8f581ea2ad7 --database YPNt5CcB4q3sXqAkRHL99a --execute CREATE INDEX IF NOT EXISTS idx_risk_tracking_tracking_id ON risk_tracking(projectTrackingId)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1930
+}

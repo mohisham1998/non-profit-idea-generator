@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nonprofit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nonprofit_ideas
+      POSTGRES_USER: nonprofit_user
+      POSTGRES_PASSWORD: nonprofit_password_change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nonprofit_user -d nonprofit_ideas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_ID: ${VITE_APP_ID:-nonprofit-ideas-generator}
+        VITE_OAUTH_PORTAL_URL: ${VITE_OAUTH_PORTAL_URL:-https://oauth.manus.app}
+        VITE_ANALYTICS_ENDPOINT: ${VITE_ANALYTICS_ENDPOINT:-}
+    container_name: nonprofit-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://nonprofit_user:nonprofit_password_change_me@postgres:5432/nonprofit_ideas
+      
+      # Application
+      NODE_ENV: production
+      PORT: 3000
+      
+      # JWT Secret - CHANGE THIS IN PRODUCTION
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-random-secret-key-in-production}
+      
+      # Manus Platform
+      VITE_APP_ID: ${VITE_APP_ID:-nonprofit-ideas-generator}
+      VITE_OAUTH_PORTAL_URL: ${VITE_OAUTH_PORTAL_URL:-https://oauth.manus.app}
+      OAUTH_SERVER_URL: ${OAUTH_SERVER_URL:-https://oauth.manus.app}
+      OWNER_OPEN_ID: ${OWNER_OPEN_ID:-}
+      
+      # Built-in Forge API
+      BUILT_IN_FORGE_API_URL: ${BUILT_IN_FORGE_API_URL:-https://api.manus.app}
+      BUILT_IN_FORGE_API_KEY: ${BUILT_IN_FORGE_API_KEY:-}
+      
+      # AI Provider
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: nonprofit-network
