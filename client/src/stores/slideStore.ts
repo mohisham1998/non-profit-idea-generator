@@ -17,6 +17,7 @@ export type CardType =
 export interface CardStyle {
   accentImage?: string;
   backgroundColor: string;
+  backgroundImage?: string;
   colorTheme: 'default' | 'gray' | 'blue' | 'green' | 'purple' | 'orange' | 'teal' | 'rose' | 'midnight' | 'amber';
   fullBleed: boolean;
   contentAlignment: 'top' | 'center' | 'bottom';
@@ -24,7 +25,10 @@ export interface CardStyle {
   showFooter: boolean;
   headerText?: string;
   footerText?: string;
+  // Per-slide logo control
   showLogo?: boolean;
+  logoPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
+  logoSize?: 'small' | 'medium' | 'large';
   // Layout & visual customization
   layoutVariant?: 'cards' | 'list' | 'grid' | 'numbered' | 'quote' | 'timeline' | 'compact' | 'table';
   itemStyle?: 'numbered' | 'check' | 'arrow' | 'dot' | 'star' | 'card';
@@ -51,12 +55,18 @@ export interface PresentationTheme {
   secondaryColor: string;
   accentColor: string;
   fontFamily: string;
+  // Global background for all slides
+  globalBackgroundColor?: string;
+  globalBackgroundImage?: string;
+  applyGlobalBackground: boolean;
   coverSlide: {
     enabled: boolean;
     title: string;
     subtitle: string;
     backgroundImage?: string;
     backgroundColor: string;
+    backgroundSize?: 'cover' | 'contain' | 'auto';
+    backgroundPosition?: string;
     layout: 'centered' | 'left-aligned' | 'minimal' | 'bold';
   };
   applyLogoToAllSlides: boolean;
@@ -108,6 +118,7 @@ const defaultTheme: PresentationTheme = {
   secondaryColor: '#f59e0b', // Amber
   accentColor: '#ea580c',
   fontFamily: 'Inter, sans-serif',
+  applyGlobalBackground: false,
   coverSlide: {
     enabled: true,
     title: 'عنوان العرض التقديمي',
@@ -127,7 +138,9 @@ export const defaultCardStyle: CardStyle = {
   contentAlignment: 'top',
   showHeader: false,
   showFooter: false,
-  showLogo: true,
+  showLogo: true, // defaults to showing logo (if theme has one)
+  logoPosition: undefined, // undefined = use theme default
+  logoSize: undefined, // undefined = use theme default
 };
 
 // Create the store

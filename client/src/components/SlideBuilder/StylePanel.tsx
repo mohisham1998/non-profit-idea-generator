@@ -1,9 +1,12 @@
+import { useState, useRef } from 'react';
 import { useSlideStore, CardStyle, CardType } from '@/stores/slideStore';
 import { Button } from '@/components/ui/button';
 import {
   X, Trash2, List, LayoutGrid, Quote, Hash, CheckSquare, ArrowRight,
-  Dot, Star, CreditCard, AlignLeft, AlignCenter, Type, Rows3,
+  Dot, Star, CreditCard, AlignLeft, AlignCenter, Type, Rows3, Eye, EyeOff,
+  Layout, Upload, Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // ─── Color Themes ────────────────────────────────────────────────
 const COLOR_THEMES: {
@@ -33,15 +36,16 @@ const LAYOUT_OPTIONS: {
   label: string;
   icon: React.ReactNode;
   forTypes: (CardType | 'custom')[];
+  supportsItemIcons: boolean; // whether this layout uses item icons (numbered, check, arrow, dot, etc.)
 }[] = [
-  { id: 'cards',    label: 'بطاقات',      icon: <CreditCard className="h-4 w-4" />,   forTypes: ['custom'] },
-  { id: 'list',     label: 'قائمة',       icon: <List className="h-4 w-4" />,         forTypes: ['custom'] },
-  { id: 'grid',     label: 'شبكة',        icon: <LayoutGrid className="h-4 w-4" />,   forTypes: ['custom'] },
-  { id: 'numbered', label: 'مرقّم',       icon: <Hash className="h-4 w-4" />,         forTypes: ['custom'] },
-  { id: 'quote',    label: 'اقتباس',      icon: <Quote className="h-4 w-4" />,        forTypes: ['custom'] },
-  { id: 'timeline', label: 'جدول زمني',   icon: <Rows3 className="h-4 w-4" />,        forTypes: ['custom'] },
-  { id: 'compact',  label: 'مضغوط',       icon: <AlignLeft className="h-4 w-4" />,    forTypes: ['custom'] },
-  { id: 'table',    label: 'جدول',        icon: <AlignCenter className="h-4 w-4" />,  forTypes: ['custom'] },
+  { id: 'cards',    label: 'بطاقات',      icon: <CreditCard className="h-4 w-4" />,   forTypes: ['custom'], supportsItemIcons: true },
+  { id: 'list',     label: 'قائمة',       icon: <List className="h-4 w-4" />,         forTypes: ['custom'], supportsItemIcons: true },
+  { id: 'grid',     label: 'شبكة',        icon: <LayoutGrid className="h-4 w-4" />,   forTypes: ['custom'], supportsItemIcons: true },
+  { id: 'numbered', label: 'مرقّم',       icon: <Hash className="h-4 w-4" />,         forTypes: ['custom'], supportsItemIcons: true },
+  { id: 'quote',    label: 'اقتباس',      icon: <Quote className="h-4 w-4" />,        forTypes: ['custom'], supportsItemIcons: false },
+  { id: 'timeline', label: 'جدول زمني',   icon: <Rows3 className="h-4 w-4" />,        forTypes: ['custom'], supportsItemIcons: true },
+  { id: 'compact',  label: 'مضغوط',       icon: <AlignLeft className="h-4 w-4" />,    forTypes: ['custom'], supportsItemIcons: true },
+  { id: 'table',    label: 'جدول',        icon: <AlignCenter className="h-4 w-4" />,  forTypes: ['custom'], supportsItemIcons: false },
 ];
 
 // ─── Item Styles ─────────────────────────────────────────────────
@@ -61,32 +65,80 @@ const TEXT_SIZES: { id: CardStyle['textSize']; label: string }[] = [
   { id: 'lg', label: 'كبير' },
 ];
 
+// ─── Cover Layouts ───────────────────────────────────────────────
+const COVER_LAYOUTS: { id: 'centered' | 'left-aligned' | 'minimal' | 'bold'; label: string }[] = [
+  { id: 'centered', label: 'مركزي' },
+  { id: 'left-aligned', label: 'محاذاة لليسار' },
+  { id: 'minimal', label: 'بسيط' },
+  { id: 'bold', label: 'واضح' },
+];
+
+// Custom cards with list content use layout & item icons (Vision, Idea, etc. don't)
+const LIST_CONTENT_KEYS = ['detailedObjectives','justifications','features','strengths','outputs','expectedResults','risks'];
+
 // ─── Component ───────────────────────────────────────────────────
 interface StylePanelProps {
   cardId: string;
   cardType: CardType;
   currentStyle: CardStyle;
+  contentKey?: string;
   onClose: () => void;
   onDeleteCard: () => void;
 }
 
-export function StylePanel({ cardId, cardType, currentStyle, onClose, onDeleteCard }: StylePanelProps) {
-  const { updateCardStyle } = useSlideStore();
+export function StylePanel({ cardId, cardType, currentStyle, contentKey = '', onClose, onDeleteCard }: StylePanelProps) {
+  const { updateCardStyle, theme, updateCoverSlide } = useSlideStore();
+  const [uploadingCoverBg, setUploadingCoverBg] = useState(false);
+  const coverBgInputRef = useRef<HTMLInputElement>(null);
 
   const update = (updates: Partial<CardStyle>) => {
     updateCardStyle(cardId, updates);
   };
 
-  // Available layouts for this card type
-  const availableLayouts = LAYOUT_OPTIONS.filter(l =>
-    l.forTypes.includes(cardType as any)
-  );
+  const handleCoverBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) {
+      if (file) toast.error('يرجى اختيار ملف صورة فقط');
+      return;
+    }
+    setUploadingCoverBg(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Upload failed');
+      const data = await response.json();
+      updateCoverSlide({ backgroundImage: data.url });
+      toast.success('تم رفع صورة الغلاف بنجاح');
+    } catch (err) {
+      toast.error('فشل رفع الصورة');
+      console.error(err);
+    } finally {
+      setUploadingCoverBg(false);
+      if (coverBgInputRef.current) coverBgInputRef.current.value = '';
+    }
+  };
+
+  // Layout & Item Icon only apply to custom cards with list content (outputs, risks, etc.)
+  const hasListContent = cardType === 'custom' && LIST_CONTENT_KEYS.includes(contentKey);
+
+  // Available layouts for this card type (only when content uses them)
+  const availableLayouts = hasListContent ? LAYOUT_OPTIONS.filter(l => l.forTypes.includes(cardType as any)) : [];
+
+  // Item icons only make sense for layouts that support them (quote and table don't)
+  const effectiveLayout = currentStyle.layoutVariant ?? 'cards';
+  const selectedLayout = availableLayouts.find(l => l.id === effectiveLayout);
+  const showItemIcons = hasListContent && (selectedLayout?.supportsItemIcons ?? true);
+
+  const coverSlide = theme.coverSlide;
 
   return (
     <div className="w-72 bg-white border-l border-gray-200 shadow-xl flex flex-col" style={{ height: '100%', maxHeight: '100vh' }} dir="rtl">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 className="font-semibold text-gray-800 text-sm">تنسيق البطاقة</h3>
+        <h3 className="font-semibold text-gray-800 text-sm">
+          {cardType === 'cover' ? 'تنسيق الغلاف' : 'تنسيق البطاقة'}
+        </h3>
         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -95,6 +147,117 @@ export function StylePanel({ cardId, cardType, currentStyle, onClose, onDeleteCa
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-4 space-y-6">
 
+          {/* ── Cover Slide Formatting (when cover is selected) ── */}
+          {cardType === 'cover' ? (
+            <>
+              <section>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Layout className="h-3.5 w-3.5" /> تخطيط الغلاف
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {COVER_LAYOUTS.map(l => (
+                    <button
+                      key={l.id}
+                      onClick={() => updateCoverSlide({ layout: l.id })}
+                      className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                        coverSlide.layout === l.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">لون خلفية الغلاف</h4>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={coverSlide.backgroundColor || '#ffffff'}
+                    onChange={e => updateCoverSlide({ backgroundColor: e.target.value })}
+                    className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={coverSlide.backgroundColor || '#ffffff'}
+                    onChange={e => updateCoverSlide({ backgroundColor: e.target.value })}
+                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+              </section>
+              <section>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">صورة خلفية (اختياري)</h4>
+                <input ref={coverBgInputRef} type="file" accept="image/*" onChange={handleCoverBgUpload} className="hidden" />
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2"
+                    onClick={() => coverBgInputRef.current?.click()}
+                    disabled={uploadingCoverBg}
+                  >
+                    {uploadingCoverBg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {uploadingCoverBg ? 'جاري الرفع...' : 'رفع صورة'}
+                  </Button>
+                </div>
+                <input
+                  type="url"
+                  value={coverSlide.backgroundImage ?? ''}
+                  onChange={e => updateCoverSlide({ backgroundImage: e.target.value || undefined })}
+                  placeholder="أو أدخل رابط الصورة..."
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </section>
+              {coverSlide.backgroundImage && (
+                <>
+                  <section>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">حجم الصورة</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'cover', label: 'تغطية كاملة' },
+                        { id: 'contain', label: 'احتواء' },
+                        { id: 'auto', label: 'تلقائي' },
+                      ].map(s => (
+                        <button
+                          key={s.id}
+                          onClick={() => updateCoverSlide({ backgroundSize: s.id as any })}
+                          className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            (coverSlide.backgroundSize || 'cover') === s.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                  <section>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">موضع الصورة</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'center', label: 'وسط' },
+                        { id: 'top', label: 'أعلى' },
+                        { id: 'bottom', label: 'أسفل' },
+                        { id: 'left', label: 'يسار' },
+                        { id: 'right', label: 'يمين' },
+                      ].map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => updateCoverSlide({ backgroundPosition: p.id })}
+                          className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            (coverSlide.backgroundPosition || 'center') === p.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+            </>
+          ) : (
+          <>
           {/* ── Color Theme ─────────────────────────────────── */}
           <section>
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">لون البطاقة</h4>
@@ -144,8 +307,8 @@ export function StylePanel({ cardId, cardType, currentStyle, onClose, onDeleteCa
             </section>
           )}
 
-          {/* ── Item Style (only for custom cards with list-based layouts) ── */}
-          {cardType === 'custom' && (
+          {/* ── Item Style (only when layout supports icons: cards, list, grid, numbered, timeline, compact) ── */}
+          {showItemIcons && (
             <section>
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">أيقونة العناصر</h4>
               <div className="grid grid-cols-3 gap-2">
@@ -236,6 +399,91 @@ export function StylePanel({ cardId, cardType, currentStyle, onClose, onDeleteCa
               </button>
             </label>
           </section>
+
+          {/* ── Per-Slide Logo Control ─────────────────────── */}
+          {theme.logo && (
+            <section className="space-y-3">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">الشعار</h4>
+              
+              {/* Show/Hide Logo */}
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium text-gray-700">إظهار الشعار</span>
+                <button
+                  onClick={() => update({ showLogo: !currentStyle.showLogo })}
+                  className={`
+                    relative w-11 h-6 rounded-full transition-colors
+                    ${currentStyle.showLogo ? 'bg-blue-500' : 'bg-gray-300'}
+                  `}
+                >
+                  <span className={`
+                    absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform
+                    ${currentStyle.showLogo ? 'translate-x-0.5' : 'translate-x-5'}
+                  `} />
+                </button>
+              </label>
+
+              {currentStyle.showLogo && (
+                <>
+                  {/* Logo Position */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-2">موضع الشعار</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'top-left', label: 'أعلى يسار' },
+                        { id: 'top-right', label: 'أعلى يمين' },
+                        { id: 'center', label: 'وسط' },
+                        { id: 'bottom-left', label: 'أسفل يسار' },
+                        { id: 'bottom-right', label: 'أسفل يمين' },
+                      ].map(pos => (
+                        <button
+                          key={pos.id}
+                          onClick={() => update({ logoPosition: pos.id as any })}
+                          className={`
+                            px-2 py-1.5 rounded-lg text-xs font-medium transition-all
+                            ${(currentStyle.logoPosition || theme.logoPosition) === pos.id
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }
+                          `}
+                        >
+                          {pos.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Logo Size */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-2">حجم الشعار</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'small', label: 'صغير' },
+                        { id: 'medium', label: 'متوسط' },
+                        { id: 'large', label: 'كبير' },
+                      ].map(size => (
+                        <button
+                          key={size.id}
+                          onClick={() => update({ logoSize: size.id as any })}
+                          className={`
+                            px-2 py-1.5 rounded-lg text-xs font-medium transition-all
+                            ${(currentStyle.logoSize || theme.logoSize) === size.id
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }
+                          `}
+                        >
+                          {size.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
+          </>
+          )}
 
         </div>
       </div>

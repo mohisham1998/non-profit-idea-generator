@@ -42,6 +42,9 @@ interface SlideCardProps {
   logoPosition?: string;
   logoSize?: string;
   applyLogoToAllSlides?: boolean;
+  globalBackgroundColor?: string;
+  globalBackgroundImage?: string;
+  applyGlobalBackground?: boolean;
   coverSlide?: { backgroundColor?: string; backgroundImage?: string; layout?: 'centered' | 'left-aligned' | 'minimal' | 'bold' };
   onEdit?: () => void;
   onStyle?: () => void;
@@ -50,7 +53,7 @@ interface SlideCardProps {
   onCancel?: () => void;
 }
 
-export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosition, logoSize, applyLogoToAllSlides, coverSlide, onEdit, onStyle, onAIChat, onSave, onCancel }: SlideCardProps) {
+export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosition, logoSize, applyLogoToAllSlides, globalBackgroundColor, globalBackgroundImage, applyGlobalBackground, coverSlide, onEdit, onStyle, onAIChat, onSave, onCancel }: SlideCardProps) {
   const { style, title, type, content } = card;
 
   // Draft state for editing
@@ -816,10 +819,14 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
         <div className="p-6 space-y-4">
           {items.map((item, idx) => (
             <div key={idx} className="flex items-start gap-5">
-              <div style={{ background: `linear-gradient(135deg, ${c.main}, ${c.dark})`, color: '#fff' }}
-                   className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow">
-                {idx + 1}
-              </div>
+              {itemStyle === 'numbered' ? (
+                <div style={{ background: `linear-gradient(135deg, ${c.main}, ${c.dark})`, color: '#fff' }}
+                     className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow">
+                  {idx + 1}
+                </div>
+              ) : (
+                <div className="flex-shrink-0 mt-0.5">{iconEl(idx)}</div>
+              )}
               <p className={`text-gray-800 leading-relaxed pt-2 ${textSizeCls}`}>{item}</p>
             </div>
           ))}
@@ -833,7 +840,13 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
           {items.map((item, idx) => (
             <div key={idx} className="flex items-start gap-4 relative">
               <div className="flex flex-col items-center">
-                <div style={{ backgroundColor: c.main }} className="w-4 h-4 rounded-full flex-shrink-0 z-10 mt-1" />
+                <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 z-10 mt-0.5">
+                  {itemStyle === 'dot' ? (
+                    <div style={{ backgroundColor: c.main }} className="w-4 h-4 rounded-full" />
+                  ) : (
+                    iconEl(idx)
+                  )}
+                </div>
                 {idx < items.length - 1 && <div style={{ backgroundColor: c.lighter }} className="w-0.5 flex-1 min-h-[32px]" />}
               </div>
               <div style={{ borderColor: c.border }} className="bg-white rounded-xl p-4 border shadow-sm flex-1 mb-3">
@@ -1201,24 +1214,37 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
           border border-gray-200
           ${type === 'cover' && coverSlide ? '' : getCardBg()}
         `}
-        style={type === 'cover' && coverSlide ? {
-          backgroundColor: coverSlide.backgroundColor || '#ffffff',
-          backgroundImage: coverSlide.backgroundImage ? `url(${coverSlide.backgroundImage})` : undefined,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        } : undefined}
+        style={
+          type === 'cover' && coverSlide ? {
+            backgroundColor: coverSlide.backgroundColor || '#ffffff',
+            backgroundImage: coverSlide.backgroundImage ? `url(${coverSlide.backgroundImage})` : undefined,
+            backgroundSize: coverSlide.backgroundSize || 'cover',
+            backgroundPosition: coverSlide.backgroundPosition || 'center',
+          } : applyGlobalBackground ? {
+            backgroundColor: globalBackgroundColor || style.backgroundColor || '#ffffff',
+            backgroundImage: globalBackgroundImage ? `url(${globalBackgroundImage})` : (style.backgroundImage ? `url(${style.backgroundImage})` : undefined),
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          } : undefined
+        }
         onClick={isEditing ? undefined : onClick}
       >
-        {/* Logo on all slides (Gamma-style) */}
-        {logo && applyLogoToAllSlides && (
+        {/* Logo on slides (per-slide control or global) */}
+        {logo && (style.showLogo !== false) && (applyLogoToAllSlides || style.showLogo) && (
           <div
             className={`absolute z-10 pointer-events-none ${
-              logoPosition === 'top-left' ? 'top-3 left-3' :
-              logoPosition === 'top-right' ? 'top-3 right-3' :
-              logoPosition === 'bottom-left' ? 'bottom-3 left-3' :
-              logoPosition === 'bottom-right' ? 'bottom-3 right-3' :
-              'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
-            } ${logoSize === 'small' ? 'w-10 h-10' : logoSize === 'large' ? 'w-20 h-20' : 'w-14 h-14'}`}
+              (() => {
+                const pos = style.logoPosition || logoPosition || 'top-right';
+                return pos === 'top-left' ? 'top-3 left-3' :
+                  pos === 'top-right' ? 'top-3 right-3' :
+                  pos === 'bottom-left' ? 'bottom-3 left-3' :
+                  pos === 'bottom-right' ? 'bottom-3 right-3' :
+                  'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
+              })()
+            } ${(() => {
+              const sz = style.logoSize || logoSize || 'medium';
+              return sz === 'small' ? 'w-10 h-10' : sz === 'large' ? 'w-20 h-20' : 'w-14 h-14';
+            })()}`}
           >
             <img src={logo} alt="Logo" className="w-full h-full object-contain" />
           </div>

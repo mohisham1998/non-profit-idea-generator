@@ -388,6 +388,9 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
                     logoPosition={theme.logoPosition}
                     logoSize={theme.logoSize}
                     applyLogoToAllSlides={theme.applyLogoToAllSlides}
+                    globalBackgroundColor={theme.globalBackgroundColor}
+                    globalBackgroundImage={theme.globalBackgroundImage}
+                    applyGlobalBackground={theme.applyGlobalBackground}
                     coverSlide={theme.coverSlide}
                     onEdit={() => handleEdit(card.id)}
                     onStyle={() => handleStyle(card.id)}
@@ -418,6 +421,7 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
               cardId={stylingCardId}
               cardType={stylingCard.type}
               currentStyle={stylingCard.style}
+              contentKey={stylingCard.type === 'custom' ? (Object.keys(stylingCard.content || {})[0] ?? '') : ''}
               onClose={() => setStylingCardId(null)}
               onDeleteCard={() => {
                 removeCard(stylingCardId);
