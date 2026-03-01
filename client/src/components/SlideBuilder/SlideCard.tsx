@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { SlideCard as SlideCardType } from '@/stores/slideStore';
+import { SlideCard as SlideCardType, type SlideImage } from '@/stores/slideStore';
 import { Card } from '@/components/ui/card';
+import { ImagePlaceholder } from './ImagePlaceholder';
 import { Button } from '@/components/ui/button';
 import { 
   Gauge, 
@@ -38,6 +39,7 @@ interface SlideCardProps {
   isSelected?: boolean;
   isEditing?: boolean;
   onClick?: () => void;
+  primaryColor?: string; // From theme branding for badges/accents (FR-3)
   logo?: string;
   logoPosition?: string;
   logoSize?: string;
@@ -45,7 +47,7 @@ interface SlideCardProps {
   globalBackgroundColor?: string;
   globalBackgroundImage?: string;
   applyGlobalBackground?: boolean;
-  coverSlide?: { backgroundColor?: string; backgroundImage?: string; layout?: 'centered' | 'left-aligned' | 'minimal' | 'bold' };
+  coverSlide?: { backgroundColor?: string; backgroundImage?: string; layout?: 'centered' | 'left-aligned' | 'minimal' | 'bold'; backgroundSize?: 'cover' | 'contain' | 'auto'; backgroundPosition?: string };
   onEdit?: () => void;
   onStyle?: () => void;
   onAIChat?: () => void;
@@ -53,7 +55,7 @@ interface SlideCardProps {
   onCancel?: () => void;
 }
 
-export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosition, logoSize, applyLogoToAllSlides, globalBackgroundColor, globalBackgroundImage, applyGlobalBackground, coverSlide, onEdit, onStyle, onAIChat, onSave, onCancel }: SlideCardProps) {
+export function SlideCard({ card, isSelected, isEditing, onClick, primaryColor: themePrimaryColor, logo, logoPosition, logoSize, applyLogoToAllSlides, globalBackgroundColor, globalBackgroundImage, applyGlobalBackground, coverSlide, onEdit, onStyle, onAIChat, onSave, onCancel }: SlideCardProps) {
   const { style, title, type, content } = card;
 
   // Draft state for editing
@@ -109,7 +111,7 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
     vision:             { header: 'bg-gradient-to-r from-purple-600 to-violet-700 text-white',  bg: 'bg-gradient-to-br from-purple-50 to-violet-50',  icon: <Eye className="h-5 w-5" /> },
     generalObjective:   { header: 'bg-gradient-to-r from-blue-600 to-blue-800 text-white',       bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',    icon: <Target className="h-5 w-5" /> },
     detailedObjectives: { header: 'bg-gradient-to-r from-indigo-500 to-indigo-700 text-white',   bg: 'bg-gradient-to-br from-indigo-50 to-blue-50',    icon: <CheckCircle className="h-5 w-5" /> },
-    idea:               { header: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white',    bg: 'bg-gradient-to-br from-amber-50 to-orange-50',   icon: <Lightbulb className="h-5 w-5" /> },
+    idea:               { header: 'bg-gradient-to-r from-primary to-cyan-600 text-white',    bg: 'bg-gradient-to-br from-primary/5 to-cyan-50',   icon: <Lightbulb className="h-5 w-5" /> },
     justifications:     { header: 'bg-gradient-to-r from-teal-500 to-teal-700 text-white',       bg: 'bg-gradient-to-br from-teal-50 to-emerald-50',   icon: <FileText className="h-5 w-5" /> },
     features:           { header: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white',  bg: 'bg-gradient-to-br from-fuchsia-50 to-purple-50', icon: <Sparkles className="h-5 w-5" /> },
     strengths:          { header: 'bg-gradient-to-r from-green-600 to-emerald-700 text-white',   bg: 'bg-gradient-to-br from-green-50 to-emerald-50',  icon: <TrendingUp className="h-5 w-5" /> },
@@ -182,7 +184,7 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
       case 'logframe':      return 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white';
       case 'timeline':      return 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white';
       case 'pmdpro':        return 'bg-gradient-to-r from-violet-500 to-violet-600 text-white';
-      case 'designThinking':return 'bg-gradient-to-r from-amber-500 to-amber-600 text-white';
+      case 'designThinking':return 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white';
       case 'marketing':     return 'bg-gradient-to-r from-pink-500 to-pink-600 text-white';
       default:              return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
     }
@@ -209,7 +211,7 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
   // Render content based on card type
   // ─── Inline Edit Helpers ─────────────────────────────────────
   // ET: inline-editable text block (textarea). Only shown when isEditing.
-  const ET = (text: string, field: string, extraCls = '', rows = 3) =>
+  const ET = ({ text, field, extraCls = '', rows = 3 }: { text: string; field: string; extraCls?: string; rows?: number }) =>
     isEditing ? (
       <textarea
         value={draft?.[field] !== undefined ? String(draft[field]) : text}
@@ -223,7 +225,7 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
     ) : <>{text}</>;
 
   // EI: inline-editable single-line input
-  const EI = (text: string, field: string, extraCls = '') =>
+  const EI = ({ text, field, extraCls = '' }: { text: string; field: string; extraCls?: string }) =>
     isEditing ? (
       <input
         value={draft?.[field] !== undefined ? String(draft[field]) : text}
@@ -763,10 +765,12 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
   const textSizeCls   = textSize === 'sm' ? 'text-sm' : textSize === 'lg' ? 'text-xl' : 'text-base';
 
   // Render a list of items applying the current itemStyle + layoutVariant
-  // accentKey: color key from TC (e.g. 'blue', 'teal') — overridden by themeAccent when set
+  // Use theme primary color (branding) when provided; otherwise TC palette
   const renderItemList = (items: string[], accentKey = 'blue') => {
     const key = themeAccent || accentKey;
-    const c = TC[key] ?? TC.blue;
+    const c = themePrimaryColor
+      ? { main: themePrimaryColor, dark: themePrimaryColor, light: themePrimaryColor + '20', lighter: themePrimaryColor + '10', border: themePrimaryColor + '40' } as { main: string; dark: string; light: string; lighter: string; border: string }
+      : (TC[key] ?? TC.blue);
 
     const iconEl = (idx: number): React.ReactNode => {
       switch (itemStyle) {
@@ -1121,8 +1125,8 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
   );
   
   return (
-    <div className="relative group">
-      {/* Smart Action Buttons - Always visible, cleaner design */}
+    <div className="relative group w-full max-w-4xl mx-auto">
+      {/* Smart Action Buttons - Above the slide (outside aspect container to avoid clipping) */}
       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
         {isEditing ? (
           /* Editing mode toolbar */
@@ -1201,10 +1205,17 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
           </div>
         )}
       </div>
-      
+
+      {/* 16:9 aspect ratio container (FR-1). Tall slides get extra min-height for content. id for html-to-image export */}
+      <div
+        id={`slide-${card.id}`}
+        className={`aspect-video w-full rounded-xl overflow-hidden shadow-lg bg-white ${
+          card.layoutConfig?.estimatedHeight === 'tall' ? 'min-h-[340px]' : card.layoutConfig?.estimatedHeight === 'multi-slide' ? 'min-h-[400px]' : 'min-h-[280px]'
+        }`}
+      >
       <Card
         className={`
-          relative overflow-hidden transition-all duration-200
+          relative overflow-hidden transition-all duration-200 h-full w-full flex flex-col
           ${isEditing
             ? 'ring-2 ring-blue-500 shadow-xl cursor-default'
             : isSelected
@@ -1269,19 +1280,73 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
           </div>
         )}
         
-        {/* Main Content — textSize and contentAlignment applied here for ALL card types */}
-        <div
-          className={textSizeCls}
-          style={
-            style.contentAlignment === 'center'
-              ? { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '180px' }
-              : style.contentAlignment === 'bottom'
-              ? { display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '180px' }
-              : undefined
-          }
-        >
-          {renderContent()}
-        </div>
+        {/* Main Content — layoutConfig controls image position (left-panel, right-panel, top-banner) */}
+        {(() => {
+          const imgPos = card.layoutConfig?.imagePlacements?.[0]?.position ?? card.images?.[0]?.position ?? 'right-panel';
+          const imgSize = card.layoutConfig?.imagePlacements?.[0]?.size ?? card.images?.[0]?.size ?? 'third';
+          const imgWidth = imgSize === 'full' ? 'w-full' : imgSize === 'half' ? 'w-1/2' : imgSize === 'third' ? 'w-1/3' : 'w-1/4';
+          const isTopBanner = imgPos === 'top-banner';
+          const imagePanel = card.images && card.images.length > 0 && (
+            <div className={`flex-shrink-0 ${imgWidth} min-w-[120px] p-4 flex items-center justify-center`}>
+              {card.images.map((img: SlideImage, idx: number) => (
+                <div key={img.id || idx} className="w-full h-full min-h-[100px] rounded-lg overflow-hidden">
+                  {img.status === 'loading' ? (
+                    <ImagePlaceholder
+                      gradientFrom={themePrimaryColor || '#0891b2'}
+                      gradientTo={themePrimaryColor ? `${themePrimaryColor}cc` : '#0e7490'}
+                      iconName={type === 'kpis' ? 'Gauge' : type === 'budget' ? 'DollarSign' : type === 'swot' ? 'Target' : 'Image'}
+                      size="medium"
+                    />
+                  ) : img.status === 'ready' && img.url ? (
+                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImagePlaceholder
+                      gradientFrom={themePrimaryColor || '#0891b2'}
+                      gradientTo={themePrimaryColor ? `${themePrimaryColor}cc` : '#0e7490'}
+                      iconName="ImageOff"
+                      size="medium"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+          const contentDiv = (
+            <div
+              className={card.images?.length && !isTopBanner ? 'flex-1 min-w-0 overflow-auto' : ''}
+              style={
+                !card.images?.length && style.contentAlignment === 'center'
+                  ? { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '180px' }
+                  : !card.images?.length && style.contentAlignment === 'bottom'
+                  ? { display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '180px' }
+                  : undefined
+              }
+            >
+              {renderContent()}
+            </div>
+          );
+          return (
+            <div
+              className={`flex flex-1 min-h-0 ${card.images?.length && !isTopBanner ? 'flex-row' : ''} ${isTopBanner ? 'flex-col' : ''} ${textSizeCls}`}
+              style={
+                style.contentAlignment === 'center' && !card.images?.length
+                  ? { flexDirection: 'column', justifyContent: 'center', minHeight: '180px' }
+                  : style.contentAlignment === 'bottom' && !card.images?.length
+                  ? { flexDirection: 'column', justifyContent: 'flex-end', minHeight: '180px' }
+                  : card.images?.length && !isTopBanner
+                  ? { flexDirection: 'row' }
+                  : isTopBanner
+                  ? { flexDirection: 'column' }
+                  : undefined
+              }
+            >
+              {isTopBanner && imagePanel}
+              {imgPos === 'right-panel' && imagePanel}
+              {contentDiv}
+              {(imgPos === 'left-panel' || (!isTopBanner && imgPos !== 'right-panel')) && imagePanel}
+            </div>
+          );
+        })()}
 
         {/* Edit mode: blue bottom bar */}
         {isEditing && (
@@ -1322,6 +1387,8 @@ export function SlideCard({ card, isSelected, isEditing, onClick, logo, logoPosi
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }
+

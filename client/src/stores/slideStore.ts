@@ -35,6 +35,18 @@ export interface CardStyle {
   textSize?: 'sm' | 'md' | 'lg';
 }
 
+/** Image placement in slide layout */
+export type ImagePosition = 'background' | 'left-panel' | 'right-panel' | 'top-banner';
+export type ImageSize = 'full' | 'half' | 'third' | 'quarter';
+
+export interface SlideImage {
+  id: string;
+  url: string;
+  status: 'loading' | 'ready' | 'failed';
+  position: ImagePosition;
+  size: ImageSize;
+}
+
 export interface SlideCard {
   id: string;
   type: CardType;
@@ -43,6 +55,16 @@ export interface SlideCard {
   style: CardStyle;
   order: number;
   overrideTheme?: boolean; // If true, use card-specific styles instead of global theme
+  /** AI-generated images for this slide */
+  images?: SlideImage[];
+  /** True when all images are loaded */
+  visualReady?: boolean;
+  /** AI-selected layout config with image placements and height */
+  layoutConfig?: {
+    layoutType?: string;
+    imagePlacements?: Array<{ position: string; size: string; contentPrompt: string }>;
+    estimatedHeight?: 'standard' | 'tall' | 'multi-slide';
+  };
 }
 
 export interface PresentationTheme {
@@ -80,7 +102,11 @@ interface SlideStore {
   theme: PresentationTheme;
   proposedNames: string[];
   presentationName: string;
-  
+  /** Slide IDs awaiting image generation */
+  imageGenerationQueue: string[];
+  /** Per-slide image loading status */
+  imageLoadingStatus: Record<string, 'loading' | 'ready' | 'failed'>;
+
   // Actions - Card Management
   addCard: (card: Omit<SlideCard, 'id' | 'order'>) => void;
   removeCard: (cardId: string) => void;
@@ -106,6 +132,10 @@ interface SlideStore {
   // Getters
   getCard: (cardId: string) => SlideCard | undefined;
   getSelectedCard: () => SlideCard | undefined;
+
+  // Image generation
+  requestImageGeneration: (slideId: string) => void;
+  updateImageStatus: (slideId: string, status: 'loading' | 'ready' | 'failed') => void;
 }
 
 // Default theme
@@ -114,9 +144,9 @@ const defaultTheme: PresentationTheme = {
   name: 'Default Theme',
   logoPosition: 'top-right',
   logoSize: 'medium',
-  primaryColor: '#f97316', // Orange
-  secondaryColor: '#f59e0b', // Amber
-  accentColor: '#ea580c',
+  primaryColor: '#0891b2', // Cyan/teal (dashboard default)
+  secondaryColor: '#06b6d4', // Cyan
+  accentColor: '#0d9488', // Teal
   fontFamily: 'Inter, sans-serif',
   applyGlobalBackground: false,
   coverSlide: {
@@ -151,6 +181,8 @@ export const useSlideStore = create<SlideStore>((set, get) => ({
   theme: defaultTheme,
   proposedNames: [],
   presentationName: 'عنوان العرض التقديمي',
+  imageGenerationQueue: [],
+  imageLoadingStatus: {},
   
   // Card Management Actions
   addCard: (card) => {
@@ -263,5 +295,23 @@ export const useSlideStore = create<SlideStore>((set, get) => ({
   getSelectedCard: () => {
     const { cards, selectedCardId } = get();
     return cards.find((card) => card.id === selectedCardId);
+  },
+
+  requestImageGeneration: (slideId) => {
+    set((state) => ({
+      imageGenerationQueue: state.imageGenerationQueue.includes(slideId)
+        ? state.imageGenerationQueue
+        : [...state.imageGenerationQueue, slideId],
+      imageLoadingStatus: { ...state.imageLoadingStatus, [slideId]: 'loading' },
+    }));
+  },
+
+  updateImageStatus: (slideId, status) => {
+    set((state) => ({
+      imageLoadingStatus: { ...state.imageLoadingStatus, [slideId]: status },
+      imageGenerationQueue: status === 'ready' || status === 'failed'
+        ? state.imageGenerationQueue.filter((id) => id !== slideId)
+        : state.imageGenerationQueue,
+    }));
   },
 }));

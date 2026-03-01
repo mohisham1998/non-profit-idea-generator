@@ -8,9 +8,9 @@ import { eq, and } from "drizzle-orm";
 export async function createResearchStudy(data: InsertResearchStudy): Promise<ResearchStudy> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  const [study] = await db.insert(researchStudies).values(data).$returningId();
-  const created = await db.select().from(researchStudies).where(eq(researchStudies.id, study.id)).limit(1);
-  return created[0];
+  const [created] = await db.insert(researchStudies).values(data).returning();
+  if (!created) throw new Error('Failed to create research study');
+  return created;
 }
 
 /**

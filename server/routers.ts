@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { imagesRouter } from "./imagesRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from '@trpc/server';
@@ -8,11 +9,12 @@ import { invokeLLM, extractJSON } from "./_core/llm";
 import { createIdea, getUserIdeas, searchUserIdeas, getIdeaById, deleteIdea, countUserIdeas, updateIdea, createConversation, getIdeaConversations, getConversationById, addMessage, getConversationMessages, getAllUsers, getUsersByStatus, updateUserStatus, getUserStats, getUserById, getPermissions, updatePermissions, getAllSystemFeatures, toggleSystemFeature, getAllUsersWithPermissions, updateUserPermission, updateAllUserPermissions, getOrCreateProjectTracking, updateProjectTracking, createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask, createBudgetItem, getBudgetItems, updateBudgetItem, deleteBudgetItem, createKpiItem, getKpiItems, updateKpiItem, deleteKpiItem, createRiskItem, getRiskItems, updateRiskItem, deleteRiskItem, getDashboardLayout, saveDashboardLayout, resetDashboardLayout } from "./db";
 import { createResearchStudy, getResearchStudyByIdeaId, getResearchStudyById, updateResearchStudy, deleteResearchStudy } from "./dbResearch";
 import { getDb } from "./db";
-import { users } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { users, ideas } from "../drizzle/schema";
+import { eq, sql } from "drizzle-orm";
 
 export const appRouter = router({
   system: systemRouter,
+  images: imagesRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -3727,6 +3729,310 @@ ${challenges ? `التحديات: ${challenges}` : ''}
           success: true,
           message: "تم إعادة تعيين الألوان بنجاح",
         };
+      }),
+  }),
+
+  // ==================== Admin Dashboard (Usage, Decks, Branding) ====================
+  adminDashboard: router({
+    /**
+     * جلب إحصائيات الاستخدام للوحة التحكم
+     */
+    getUsageOverview: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const { slideDecks } = await import('../drizzle/schema');
+        const { desc } = await import('drizzle-orm');
+
+        // Get user's ideas count
+        const ideasCount = await db.select({ count: sql<number>`count(*)::int` }).from(ideas).where(eq(ideas.userId, ctx.user.id));
+
+        // Get user's decks count
+        const decksCount = await db.select({ count: sql<number>`count(*)::int` }).from(slideDecks).where(eq(slideDecks.userId, ctx.user.id));
+
+        // Get user's current usage
+        const userData = await db.select({
+          currentUsage: users.currentUsageUsd,
+          quotaLimit: users.quotaLimitUsd,
+        }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+
+        const quotaLimit = userData[0]?.quotaLimit ?? 50;
+        const currentUsage = userData[0]?.currentUsage ?? 0;
+
+        // Recent decks for DataTable
+        const recentDecks = await db.select({
+          id: slideDecks.id,
+          title: slideDecks.title,
+          slideCount: slideDecks.slideCount,
+          status: slideDecks.status,
+          createdAt: slideDecks.createdAt,
+        })
+          .from(slideDecks)
+          .where(eq(slideDecks.userId, ctx.user.id))
+          .orderBy(desc(slideDecks.updatedAt))
+          .limit(10);
+
+        // Build recent actions from decks and ideas
+        const recentActions = recentDecks.map((d) => ({
+          id: String(d.id),
+          type: 'deck' as const,
+          title: d.title,
+          timestamp: d.createdAt,
+        }));
+
+        // Usage trend: last 7 days placeholder (client can enrich from recentDecks)
+        const usageTrend: { date: string; ideas: number; decks: number }[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          usageTrend.push({
+            date: d.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' }),
+            ideas: 0,
+            decks: 0,
+          });
+        }
+        // Fill from recent decks by date
+        recentDecks.forEach((deck) => {
+          const key = new Date(deck.createdAt).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' });
+          const found = usageTrend.find((t) => t.date === key);
+          if (found) found.decks += 1;
+        });
+
+        return {
+          totalIdeas: ideasCount[0]?.count ?? 0,
+          totalDecks: decksCount[0]?.count ?? 0,
+          currentUsageUsd: currentUsage,
+          quotaLimitUsd: quotaLimit,
+          recentActions,
+          recentDecks,
+          usageTrend,
+        };
+      }),
+
+    /**
+     * جلب الاستخدام والحصة (من OpenRouter إن أمكن، وإلا من قاعدة البيانات)
+     */
+    getUsageQuota: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const userData = await db.select({
+          currentUsage: users.currentUsageUsd,
+          quotaLimit: users.quotaLimitUsd,
+          openRouterApiKey: users.openRouterApiKey,
+        }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+
+        const quotaLimitUsd = userData[0]?.quotaLimit ?? 50;
+        let currentUsageUsd = Number(userData[0]?.currentUsage ?? 0);
+
+        try {
+          const { fetchOpenRouterUsage } = await import('./_core/openrouter');
+          const apiKey = userData[0]?.openRouterApiKey ?? undefined;
+          const usage = await fetchOpenRouterUsage(apiKey);
+          currentUsageUsd = Number(usage.totalCost ?? currentUsageUsd);
+        } catch (err) {
+          console.warn('[getUsageQuota] OpenRouter fetch failed, using DB value:', err);
+        }
+
+        return {
+          currentUsageUsd,
+          quotaLimitUsd,
+        };
+      }),
+
+    /**
+     * جلب قائمة عروض الشرائح
+     */
+    getDecks: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { getSlideDecks } = await import('./db');
+        return await getSlideDecks(ctx.user.id);
+      }),
+
+    /**
+     * إنشاء عرض شرائح جديد
+     */
+    createDeck: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        slides: z.string().optional(), // JSON string
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { createSlideDeck } = await import('./db');
+        return await createSlideDeck({
+          userId: ctx.user.id,
+          title: input.title,
+          description: input.description || null,
+          slides: input.slides || null,
+          slideCount: 0,
+        });
+      }),
+
+    /**
+     * تحديث عرض شرائح
+     */
+    updateDeck: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        slides: z.string().optional(),
+        status: z.enum(['draft', 'published', 'archived']).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { updateSlideDeck } = await import('./db');
+        const { id, ...updates } = input;
+        return await updateSlideDeck(id, ctx.user.id, updates);
+      }),
+
+    /**
+     * حذف عرض شرائح
+     */
+    deleteDeck: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { deleteSlideDeck } = await import('./db');
+        await deleteSlideDeck(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    /**
+     * نسخ عرض شرائح
+     */
+    duplicateDeck: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { duplicateSlideDeck } = await import('./db');
+        const newDeck = await duplicateSlideDeck(input.id, ctx.user.id);
+        return { success: true, deck: newDeck };
+      }),
+
+    /**
+     * جلب إعدادات العلامة التجارية
+     */
+    getBranding: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        const userData = await db.select({
+          logoUrl: users.organizationLogo,
+          logoPlacement: users.logoPlacement,
+          primaryColor: users.primaryColor,
+          secondaryColor: users.secondaryColor,
+          backgroundColor: users.backgroundColor,
+        }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        
+        return userData[0] || null;
+      }),
+
+    /**
+     * تحديث إعدادات العلامة التجارية
+     * Logo: accepts URL or base64 data URL (max 2MB, PNG/JPEG/SVG only)
+     */
+    updateBranding: protectedProcedure
+      .input(z.object({
+        logoUrl: z.string().optional(),
+        logoPlacement: z.enum(['cover', 'footer', 'hidden']).optional(),
+        primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal('')),
+        secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal('')),
+        backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().or(z.literal('')),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        const updateData: Record<string, unknown> = {};
+        
+        if (input.logoUrl !== undefined) {
+          if (input.logoUrl === '') {
+            updateData.organizationLogo = null;
+          } else if (input.logoUrl.startsWith('data:')) {
+            const MAX_BYTES = 2 * 1024 * 1024;
+            const base64Match = input.logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+            if (!base64Match) {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: 'تنسيق الصورة غير صحيح' });
+            }
+            const mime = base64Match[1].toLowerCase();
+            const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+            if (!allowed.includes(mime)) {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: 'يجب أن تكون الصورة PNG أو JPEG أو SVG' });
+            }
+            const rawLength = (base64Match[2].length * 3) / 4;
+            if (rawLength > MAX_BYTES) {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: 'حجم الصورة يجب ألا يتجاوز 2 ميجابايت' });
+            }
+            updateData.organizationLogo = input.logoUrl;
+          } else {
+            updateData.organizationLogo = input.logoUrl;
+          }
+        }
+        
+        if (input.logoPlacement !== undefined) updateData.logoPlacement = input.logoPlacement;
+        if (input.primaryColor !== undefined) updateData.primaryColor = input.primaryColor || null;
+        if (input.secondaryColor !== undefined) updateData.secondaryColor = input.secondaryColor || null;
+        if (input.backgroundColor !== undefined) updateData.backgroundColor = input.backgroundColor || null;
+        
+        await db.update(users)
+          .set(updateData)
+          .where(eq(users.id, ctx.user.id));
+        
+        return { success: true };
+      }),
+
+    /**
+     * جلب قائمة نماذج OpenRouter المتاحة (مع التخزين المؤقت)
+     */
+    getModels: protectedProcedure
+      .query(async () => {
+        const { fetchOpenRouterModels, getCuratedModels } = await import('./_core/openrouterModels');
+        try {
+          const raw = await fetchOpenRouterModels();
+          const models = getCuratedModels(raw);
+          return {
+            models,
+            error: null,
+          };
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          return {
+            models: [],
+            error: message,
+          };
+        }
+      }),
+
+    /**
+     * جلب نموذج AI المختار
+     */
+    getSelectedModel: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        const userData = await db.select({ selectedModelId: users.selectedModelId })
+          .from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        
+        return { selectedModelId: userData[0]?.selectedModelId || null };
+      }),
+
+    /**
+     * تحديث نموذج AI المختار
+     */
+    updateSelectedModel: protectedProcedure
+      .input(z.object({ modelId: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        await db.update(users)
+          .set({ selectedModelId: input.modelId })
+          .where(eq(users.id, ctx.user.id));
+        
+        return { success: true };
       }),
   }),
 });

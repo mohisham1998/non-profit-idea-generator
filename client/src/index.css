@@ -1,7 +1,43 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Design system tokens for Admin Dashboard */
+@import "./styles/tokens.css";
+
 @custom-variant dark (&:is(.dark *));
+
+/* Cairo Font for Admin Dashboard */
+@font-face {
+  font-family: "Cairo";
+  src: url("https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangI5q6yQjSho7ou0oQ.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangI5q6yQjSho7ou0oQ.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangI5q6yQjSho7ou0oQ.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangI5q6yQjSho7ou0oQ.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @font-face {
   font-family: "IBM Plex Sans Arabic";
@@ -76,13 +112,13 @@
 
 :root {
   --font-sans: "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
-  /* ألوان مسار الابتكار - تدرج برتقالي-سماوي */
-  --primary: oklch(0.70 0.15 55); /* برتقالي */
+  /* ألوان مسار الابتكار - اللون الأساسي من BrandingSettings (سماوي افتراضي) */
+  --primary: #0891b2; /* cyan/teal dashboard default; BrandingSettings overwrites */
   --primary-foreground: oklch(0.99 0.002 240);
   --secondary-color: oklch(0.70 0.12 195); /* سماوي */
-  --sidebar-primary: oklch(0.70 0.15 55);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.99 0.002 240);
-  --chart-1: oklch(0.70 0.15 55); /* برتقالي */
+  --chart-1: var(--primary);
   --chart-2: oklch(0.70 0.12 195); /* سماوي */
   --chart-3: oklch(0.65 0.14 75); /* أصفر */
   --chart-4: oklch(0.60 0.10 180); /* أزرق فاتح */
@@ -98,19 +134,19 @@
   --secondary-foreground: oklch(0.25 0.02 260);
   --muted: oklch(0.96 0.005 240);
   --muted-foreground: oklch(0.50 0.02 260);
-  --accent: oklch(0.92 0.04 55); /* برتقالي فاتح */
-  --accent-foreground: oklch(0.35 0.12 55);
+  --accent: oklch(0.92 0.04 195); /* سماوي فاتح */
+  --accent-foreground: oklch(0.35 0.12 195);
   --destructive: oklch(0.55 0.20 25);
   --destructive-foreground: oklch(0.99 0.002 240);
   --border: oklch(0.90 0.02 195);
   --input: oklch(0.90 0.01 240);
-  --ring: oklch(0.70 0.15 55);
+  --ring: var(--primary);
   --sidebar: oklch(0.98 0.005 240);
   --sidebar-foreground: oklch(0.20 0.02 260);
-  --sidebar-accent: oklch(0.92 0.04 55);
-  --sidebar-accent-foreground: oklch(0.35 0.12 55);
+  --sidebar-accent: oklch(0.92 0.04 195);
+  --sidebar-accent-foreground: oklch(0.35 0.12 195);
   --sidebar-border: oklch(0.90 0.02 195);
-  --sidebar-ring: oklch(0.70 0.15 55);
+  --sidebar-ring: var(--primary);
 }
 
 .dark {
@@ -221,7 +257,7 @@
 
 /* Elegant gradient backgrounds - مسار الابتكار */
 .gradient-primary {
-  background: linear-gradient(135deg, oklch(0.70 0.15 55) 0%, oklch(0.70 0.12 195) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.70 0.12 195) 100%);
 }
 
 .gradient-subtle {
@@ -229,7 +265,7 @@
 }
 
 .gradient-masar {
-  background: linear-gradient(135deg, oklch(0.70 0.15 55) 0%, oklch(0.65 0.14 75) 50%, oklch(0.70 0.12 195) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.65 0.14 75) 50%, oklch(0.70 0.12 195) 100%);
 }
 
 /* Card hover effects */
@@ -1198,5 +1234,172 @@
   body {
     font-size: 12pt;
     line-height: 1.5;
+  }
+}
+
+/* ============================================
+   Admin Dashboard Specific Styles
+   ============================================ */
+
+/* Admin Theme Variables */
+.admin-theme {
+  --font-admin: "Cairo", "IBM Plex Sans Arabic", sans-serif;
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --sidebar-width: 280px;
+  --sidebar-collapsed: 80px;
+  --header-height: 64px;
+  --transition-speed: 0.3s;
+}
+
+/* RTL Enforcement for Admin */
+.admin-dashboard {
+  direction: rtl;
+  font-family: var(--font-admin);
+}
+
+.admin-dashboard * {
+  font-family: inherit;
+}
+
+/* Animated Sidebar */
+.admin-sidebar {
+  transition: width var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+.admin-sidebar.collapsed {
+  width: var(--sidebar-collapsed);
+}
+
+.admin-sidebar.expanded {
+  width: var(--sidebar-width);
+}
+
+/* Framer Motion compatible animations */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Dashboard Card Hover Effects */
+.dashboard-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Quota Progress Bar Animation */
+.quota-progress {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+/* Model Selection List */
+.model-list-item {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.model-list-item:hover {
+  background-color: rgba(var(--primary), 0.05);
+}
+
+.model-list-item.selected {
+  border-color: var(--primary);
+  background-color: rgba(var(--primary), 0.1);
+}
+
+/* Branding Color Picker */
+.color-swatch {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-swatch.active {
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Deck Card Context Menu */
+.deck-card-menu {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.deck-card:hover .deck-card-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Loading Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--muted-foreground) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Warning Banner */
+.warning-banner {
+  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+  border-right: 4px solid #f59e0b;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .admin-dashboard {
+    --color-border: #000;
+    --primary: #000;
+  }
+  
+  .dashboard-card {
+    border: 2px solid #000;
   }
 }

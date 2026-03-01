@@ -27,7 +27,7 @@ export default function Login() {
 
   useEffect(() => {
     if (user && !isLoading) {
-      setLocation('/methodology-choice');
+      setLocation('/admin/dashboard');
     }
   }, [user, isLoading, setLocation]);
 
@@ -47,7 +47,7 @@ export default function Login() {
       await loginMutation.mutateAsync({ email, password });
       toast.success('تم تسجيل الدخول بنجاح');
       await refresh();
-      setLocation('/methodology-choice');
+      setLocation('/admin/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'فشل تسجيل الدخول');
       setIsSubmitting(false);
@@ -102,7 +102,7 @@ export default function Login() {
       icon: Lightbulb,
       title: 'توليد الأفكار',
       description: 'استخدم الذكاء الاصطناعي لتوليد أفكار مبتكرة للبرامج والمبادرات',
-      color: 'from-amber-400 to-orange-500'
+      color: 'from-primary to-cyan-500'
     },
     {
       icon: BarChart3,
@@ -130,7 +130,7 @@ export default function Login() {
       <Background3D />
       
       {/* Header */}
-      <header className="border-b border-cyan-200/30 bg-gradient-to-r from-orange-400/80 via-amber-300/80 to-cyan-400/80 backdrop-blur-md sticky top-0 z-50 shadow-md shadow-cyan-400/15">
+      <header className="border-b border-primary/20 bg-gradient-to-r from-primary/80 via-primary/70 to-cyan-400/80 backdrop-blur-md sticky top-0 z-50 shadow-md shadow-primary/15">
         <div className="container flex items-center justify-center h-14 md:h-16 px-3 md:px-6">
           <div className="flex items-center gap-2 md:gap-3">
             <img 
@@ -148,12 +148,12 @@ export default function Login() {
         <div className="container px-4 md:px-6">
           <div className="max-w-3xl mx-auto text-center mb-8">
             {/* إطار زجاجي يجمع العناصر */}
-            <div className="inline-block px-6 md:px-8 py-3 md:py-4 mb-6 md:mb-8 rounded-2xl backdrop-blur-md bg-gradient-to-r from-orange-100/60 via-amber-50/60 to-orange-100/60 border border-orange-200/50 shadow-lg animate-scale-in opacity-0" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
+            <div className="inline-block px-6 md:px-8 py-3 md:py-4 mb-6 md:mb-8 rounded-2xl backdrop-blur-md bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20 shadow-lg animate-scale-in opacity-0" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
               <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-gray-600 mb-2">
                 <Sparkles className="h-3 w-3 md:h-4 md:w-4 animate-pulse-soft text-primary" />
                 مدعوم بالذكاء الاصطناعي
               </div>
-              <p className="text-base md:text-lg lg:text-xl font-semibold bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 bg-clip-text text-transparent">
+              <p className="text-base md:text-lg lg:text-xl font-semibold text-primary">
                 منصة ذكية لتطوير وتقييم برامجك
               </p>
             </div>

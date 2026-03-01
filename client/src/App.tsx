@@ -16,6 +16,12 @@ import AboutUs from "./pages/AboutUs";
 import OrganizationSettings from "./pages/OrganizationSettings";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import DashboardHome from "./pages/DashboardHome";
+import DeckLibrary from "./pages/DeckLibrary";
+import ModelSettings from "./pages/ModelSettings";
+import BrandingSettings from "./pages/BrandingSettings";
+import UsageQuota from "./pages/UsageQuota";
+import AdminLayout from "./layouts/AdminLayout";
 import SustainabilityExpert from "./pages/SustainabilityExpert";
 import SustainabilityList from "./pages/SustainabilityList";
 import ResearchStudy from "./pages/ResearchStudy";
@@ -27,7 +33,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/login"} component={Login} />
-      <Route path="/" component={() => <ProtectedRoute component={Home} />} />
+      <Route path="/" component={() => <ProtectedRoute component={() => <AdminLayout><DashboardHome /></AdminLayout>} />} />
       <Route path="/home" component={() => <ProtectedRoute component={Home} />} />
       <Route path={"/history"} component={() => <ProtectedRoute component={History} />} />
       <Route path={"/admin"} component={() => <ProtectedRoute component={AdminDashboard} />} />
@@ -38,6 +44,12 @@ function Router() {
       <Route path={"/organization-settings"} component={() => <ProtectedRoute component={OrganizationSettings} />} />
       <Route path={"/project-dashboard/:id"} component={() => <ProtectedRoute component={ProjectDashboard} />} />
       <Route path={"/admin/analytics"} component={() => <ProtectedRoute component={AdminAnalytics} />} />
+      <Route path={"/admin/dashboard"} component={() => <ProtectedRoute component={() => <AdminLayout><DashboardHome /></AdminLayout>} />} />
+      <Route path={"/admin/generate"} component={() => <ProtectedRoute component={() => <AdminLayout><Home /></AdminLayout>} />} />
+      <Route path={"/admin/decks"} component={() => <ProtectedRoute component={() => <AdminLayout><DeckLibrary /></AdminLayout>} />} />
+      <Route path={"/admin/models"} component={() => <ProtectedRoute component={() => <AdminLayout><ModelSettings /></AdminLayout>} />} />
+      <Route path={"/admin/branding"} component={() => <ProtectedRoute component={() => <AdminLayout><BrandingSettings /></AdminLayout>} />} />
+      <Route path={"/admin/usage"} component={() => <ProtectedRoute component={() => <AdminLayout><UsageQuota /></AdminLayout>} />} />
       <Route path={"/sustainability"} component={() => <ProtectedRoute component={SustainabilityList} />} />
       <Route path={"/sustainability/:id"} component={() => <ProtectedRoute component={SustainabilityExpert} />} />
       <Route path={"/research"} component={() => <ProtectedRoute component={ResearchList} />} />

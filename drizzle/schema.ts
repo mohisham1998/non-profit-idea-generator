@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, varchar, serial } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, text, timestamp, varchar, serial, bigint } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
@@ -27,6 +27,20 @@ export const users = pgTable("users", {
   secondaryColor: varchar("secondaryColor", { length: 7 }),
   /** لون الخلفية */
   backgroundColor: varchar("backgroundColor", { length: 7 }),
+  /** موضع الشعار: cover, footer, hidden */
+  logoPlacement: varchar("logoPlacement", { length: 20 }).default("cover"),
+  /** معرف نموذج AI المختار */
+  selectedModelId: varchar("selectedModelId", { length: 100 }),
+  /** مفتاح OpenRouter API (مشفر) */
+  openRouterApiKey: text("openRouterApiKey"),
+  /** حد الاستخدام بالدولار */
+  quotaLimitUsd: integer("quotaLimitUsd").default(50),
+  /** الاستخدام الحالي بالدولار */
+  currentUsageUsd: integer("currentUsageUsd").default(0),
+  /** تخزين الصور المستخدم (بايت) */
+  imageStorageUsedBytes: bigint("imageStorageUsedBytes", { mode: "number" }).default(0).notNull(),
+  /** حد تخزين الصور (بايت، 10GB افتراضي) */
+  imageStorageLimitBytes: bigint("imageStorageLimitBytes", { mode: "number" }).default(10737418240).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -389,3 +403,53 @@ export const researchStudies = pgTable("researchStudies", {
 
 export type ResearchStudy = typeof researchStudies.$inferSelect;
 export type InsertResearchStudy = typeof researchStudies.$inferInsert;
+
+/**
+ * جدول شرائح العرض - يحفف عروض الشرائح المولدة
+ */
+export const slideDecks = pgTable("slide_decks", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  /** عنوان العرض */
+  title: varchar("title", { length: 255 }).notNull(),
+  /** وصف العرض */
+  description: text("description"),
+  /** عدد الشرائح */
+  slideCount: integer("slideCount").default(0).notNull(),
+  /** رابط الصورة المصغرة */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** محتوى الشرائح - يخزن كـ JSON */
+  slides: text("slides"),
+  /** حالة العرض: draft, published, archived */
+  status: varchar("status", { length: 20 }).default("draft").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type SlideDeck = typeof slideDecks.$inferSelect;
+export type InsertSlideDeck = typeof slideDecks.$inferInsert;
+
+/**
+ * جدول الصور المولدة بالذكاء الاصطناعي - DALL-E 3
+ */
+export const generatedImages = pgTable("generated_images", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  slideDeckId: integer("slideDeckId").references(() => slideDecks.id, { onDelete: "cascade" }),
+  slideId: varchar("slideId", { length: 100 }).notNull(),
+  contentType: varchar("contentType", { length: 50 }).notNull(),
+  prompt: text("prompt").notNull(),
+  contentHash: varchar("contentHash", { length: 64 }).notNull(),
+  /** Base64-encoded image data (avoids bytea compatibility) */
+  imageData: text("imageData").notNull(),
+  fileSize: integer("fileSize").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  generationStatus: varchar("generationStatus", { length: 20 }).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type GeneratedImage = typeof generatedImages.$inferSelect;
+export type InsertGeneratedImage = typeof generatedImages.$inferInsert;

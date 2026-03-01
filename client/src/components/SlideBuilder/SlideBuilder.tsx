@@ -6,11 +6,14 @@ import { StylePanel } from './StylePanel';
 import { ThemePanel } from './ThemePanel';
 import { ProposedNamesModal } from './ProposedNamesModal';
 import { Button } from '@/components/ui/button';
-import { Download, Settings, Play, Gauge, DollarSign, Grid3X3, Table2, Calendar, FolderKanban, Lightbulb, Megaphone, Loader2, X, ArrowLeft, PanelLeftClose, PanelLeftOpen, Sparkles, Palette } from 'lucide-react';
+import { Download, Settings, Play, Gauge, DollarSign, Grid3X3, Table2, Calendar, FolderKanban, Lightbulb, Megaphone, Loader2, X, ArrowLeft, PanelLeftClose, PanelLeftOpen, Sparkles, Palette, FileText, FileDown } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
+import { useSlideExport } from '@/hooks/useSlideExport';
+import { useImageGenerationQueue } from '@/hooks/useImageGenerationQueue';
 
 interface SlideBuilderProps {
   initialData?: any;
@@ -35,7 +38,9 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
     updateCard,
     removeCard,
   } = useSlideStore();
-  
+  const { exportToPDF, exportToPPTX } = useSlideExport();
+  useImageGenerationQueue();
+
   // Handle action buttons
   const handleEdit = (cardId: string) => {
     // Toggle: click Edit again to cancel
@@ -202,11 +207,11 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
     },
   });
   
-  const generateMarketingMutation = trpc.ideas.generateMarketing.useMutation({
+  const generateMarketingMutation = trpc.marketing.generateContent.useMutation({
     onSuccess: () => {
       toast.success("تم توليد المحتوى التسويقي بنجاح!");
     },
-    onError: (error) => {
+    onError: (error: { message?: string }) => {
       toast.error(error.message || "حدث خطأ أثناء توليد المحتوى التسويقي");
     },
   });
@@ -359,10 +364,24 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
               <Settings className="h-4 w-4" />
               الإعدادات
             </Button>
-            <Button variant="default" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              تصدير
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  تصدير
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={async () => { try { await exportToPDF(); toast.success('تم تصدير PDF بنجاح'); } catch { toast.error('فشل تصدير PDF'); } }}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  تصدير PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => { try { await exportToPPTX(); toast.success('تم تصدير PowerPoint بنجاح'); } catch { toast.error('فشل تصدير PowerPoint'); } }}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  تصدير PowerPoint
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -384,6 +403,7 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
                     card={card}
                     isSelected={selectedCardId === card.id}
                     isEditing={editingCardId === card.id}
+                    primaryColor={theme.primaryColor}
                     logo={theme.logo}
                     logoPosition={theme.logoPosition}
                     logoSize={theme.logoSize}

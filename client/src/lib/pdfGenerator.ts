@@ -132,8 +132,8 @@ export const generateIdeaPDF = async (idea: IdeaData): Promise<void> => {
     .general-objective .section-header { background: #f43f5e; }
     .general-objective .section-content { border-color: #f43f5e; }
     
-    .detailed-objectives .section-header { background: #f97316; }
-    .detailed-objectives .section-content { border-color: #f97316; }
+    .detailed-objectives .section-header { background: var(--primary, #0891b2); }
+    .detailed-objectives .section-content { border-color: var(--primary, #0891b2); }
     
     .idea .section-header { background: #f59e0b; }
     .idea .section-content { border-color: #f59e0b; }

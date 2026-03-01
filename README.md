@@ -99,10 +99,12 @@ The easiest way to run the application is using Docker Compose:
    - Create a database named `nonprofit_ideas`
    - Update `DATABASE_URL` in `.env`
 
-3. **Run database migrations:**
+3. **Run database schema sync and seed admin:**
    ```bash
    pnpm run db:push
+   pnpm run db:seed
    ```
+   (Creates `admin@admin.com` / `admin123` by default. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD` to customize.)
 
 4. **Start development server:**
    ```bash
@@ -117,7 +119,8 @@ The easiest way to run the application is using Docker Compose:
 - `pnpm run check` - Type check
 - `pnpm run format` - Format code with Prettier
 - `pnpm run test` - Run tests
-- `pnpm run db:push` - Update database schema
+- `pnpm run db:push` - Sync database schema (PostgreSQL)
+- `pnpm run db:seed` - Create admin user (admin@admin.com / admin123)
 
 ## Docker Commands
 
@@ -134,6 +137,14 @@ The easiest way to run the application is using Docker Compose:
 - AI-powered nonprofit program and initiative idea generation
 - Arabic language support (RTL)
 - Export to PDF, Word, and PowerPoint
+- **Slide Builder** – Gamma-style presentation slides with:
+  - 16:9 aspect ratio
+  - AI-generated Saudi-context images (DALL-E 3 via OpenRouter)
+  - Smart layouts (two-column, quadrants, card grids, flows, stat blocks) with image zones
+  - Primary color from theme/branding for badges and accents
+  - Pixel-perfect PDF and PowerPoint export (html-to-image capture)
+  - RTL support and structured content (no solid text blocks)
+  - Image storage quota (10GB per user) visible on Usage & Quota page
 - Idea management and history
 - Search and filtering capabilities
 - Professional templates for donor marketing

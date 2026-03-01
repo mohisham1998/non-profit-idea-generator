@@ -1,7 +1,7 @@
 import { eq, desc, like, or, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { InsertUser, users, ideas, InsertIdea, Idea, conversations, messages, InsertConversation, Conversation, InsertMessage, Message, permissions, Permission, InsertPermission, systemFeatures, SystemFeature, InsertSystemFeature, projectTracking, ProjectTracking, InsertProjectTracking, projectTasks, ProjectTask, InsertProjectTask, budgetTracking, BudgetTracking, InsertBudgetTracking, kpiTracking, KpiTracking, InsertKpiTracking, riskTracking, RiskTracking, InsertRiskTracking, dashboardLayouts, DashboardLayout, InsertDashboardLayout } from "../drizzle/schema";
+import { InsertUser, users, ideas, InsertIdea, Idea, conversations, messages, InsertConversation, Conversation, InsertMessage, Message, permissions, Permission, InsertPermission, systemFeatures, SystemFeature, InsertSystemFeature, projectTracking, ProjectTracking, InsertProjectTracking, projectTasks, ProjectTask, InsertProjectTask, budgetTracking, BudgetTracking, InsertBudgetTracking, kpiTracking, KpiTracking, InsertKpiTracking, riskTracking, RiskTracking, InsertRiskTracking, dashboardLayouts, DashboardLayout, InsertDashboardLayout, slideDecks, SlideDeck, InsertSlideDeck } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -232,9 +232,9 @@ export async function deleteIdea(ideaId: number, userId: number): Promise<boolea
   try {
     const result = await db
       .delete(ideas)
-      .where(and(eq(ideas.id, ideaId), eq(ideas.userId, userId)));
-    
-    return result[0].affectedRows > 0;
+      .where(and(eq(ideas.id, ideaId), eq(ideas.userId, userId)))
+      .returning({ id: ideas.id });
+    return result.length > 0;
   } catch (error) {
     console.error("[Database] Failed to delete idea:", error);
     throw error;
@@ -480,9 +480,9 @@ export async function updateUserStatus(userId: number, status: string): Promise<
     const result = await db
       .update(users)
       .set({ status })
-      .where(eq(users.id, userId));
-    
-    return result[0].affectedRows > 0;
+      .where(eq(users.id, userId))
+      .returning({ id: users.id });
+    return result.length > 0;
   } catch (error) {
     console.error("[Database] Failed to update user status:", error);
     throw error;
@@ -956,8 +956,8 @@ export async function deleteProjectTask(taskId: number): Promise<boolean> {
   if (!db) return false;
 
   try {
-    const result = await db.delete(projectTasks).where(eq(projectTasks.id, taskId));
-    return result[0].affectedRows > 0;
+    const result = await db.delete(projectTasks).where(eq(projectTasks.id, taskId)).returning({ id: projectTasks.id });
+    return result.length > 0;
   } catch (error) {
     console.error("[Database] Failed to delete task:", error);
     return false;
@@ -1031,8 +1031,8 @@ export async function deleteBudgetItem(itemId: number): Promise<boolean> {
   if (!db) return false;
 
   try {
-    const result = await db.delete(budgetTracking).where(eq(budgetTracking.id, itemId));
-    return result[0].affectedRows > 0;
+    const result = await db.delete(budgetTracking).where(eq(budgetTracking.id, itemId)).returning({ id: budgetTracking.id });
+    return result.length > 0;
   } catch (error) {
     console.error("[Database] Failed to delete budget item:", error);
     return false;
@@ -1106,8 +1106,8 @@ export async function deleteKpiItem(itemId: number): Promise<boolean> {
   if (!db) return false;
 
   try {
-    const result = await db.delete(kpiTracking).where(eq(kpiTracking.id, itemId));
-    return result[0].affectedRows > 0;
+    const result = await db.delete(kpiTracking).where(eq(kpiTracking.id, itemId)).returning({ id: kpiTracking.id });
+    return result.length > 0;
   } catch (error) {
     console.error("[Database] Failed to delete KPI item:", error);
     return false;
@@ -1181,8 +1181,8 @@ export async function deleteRiskItem(itemId: number): Promise<boolean> {
   if (!db) return false;
 
   try {
-    const result = await db.delete(riskTracking).where(eq(riskTracking.id, itemId));
-    return result[0].affectedRows > 0;
+    const result = await db.delete(riskTracking).where(eq(riskTracking.id, itemId)).returning({ id: riskTracking.id });
+    return result.length > 0;
   } catch (error) {
     console.error("[Database] Failed to delete risk item:", error);
     return false;
@@ -1380,5 +1380,158 @@ export async function resetDashboardLayout(userId: number): Promise<boolean> {
   } catch (error) {
     console.error("[Database] Failed to reset dashboard layout:", error);
     return false;
+  }
+}
+
+// ==================== Slide Deck Functions ====================
+
+/**
+ * جلب عروض الشرائح للمستخدم
+ */
+export async function getSlideDecks(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get slide decks: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(slideDecks)
+      .where(eq(slideDecks.userId, userId))
+      .orderBy(desc(slideDecks.updatedAt));
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get slide decks:", error);
+    return [];
+  }
+}
+
+/**
+ * إنشاء عرض شرائح جديد
+ */
+export async function createSlideDeck(deck: { userId: number; title: string; description: string | null; slides: string | null; slideCount?: number }) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const result = await db
+      .insert(slideDecks)
+      .values({
+        userId: deck.userId,
+        title: deck.title,
+        description: deck.description,
+        slides: deck.slides,
+        slideCount: deck.slideCount || 0,
+        status: 'draft',
+      })
+      .returning();
+
+    return result[0];
+  } catch (error) {
+    console.error("[Database] Failed to create slide deck:", error);
+    throw error;
+  }
+}
+
+/**
+ * تحديث عرض شرائح
+ */
+export async function updateSlideDeck(id: number, userId: number, updates: Partial<{ title: string; description: string | null; slides: string | null; status: 'draft' | 'published' | 'archived' }>) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const result = await db
+      .update(slideDecks)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(slideDecks.id, id), eq(slideDecks.userId, userId)))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("Slide deck not found or access denied");
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("[Database] Failed to update slide deck:", error);
+    throw error;
+  }
+}
+
+/**
+ * حذف عرض شرائح
+ */
+export async function deleteSlideDeck(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const result = await db
+      .delete(slideDecks)
+      .where(and(eq(slideDecks.id, id), eq(slideDecks.userId, userId)))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("Slide deck not found or access denied");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete slide deck:", error);
+    throw error;
+  }
+}
+
+/**
+ * نسخ عرض شرائح
+ */
+export async function duplicateSlideDeck(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    // Get original deck
+    const original = await db
+      .select()
+      .from(slideDecks)
+      .where(and(eq(slideDecks.id, id), eq(slideDecks.userId, userId)))
+      .limit(1);
+
+    if (original.length === 0) {
+      throw new Error("Slide deck not found or access denied");
+    }
+
+    // Create copy with "نسخة" prefix
+    const result = await db
+      .insert(slideDecks)
+      .values({
+        userId: userId,
+        title: `نسخة ${original[0].title}`,
+        description: original[0].description,
+        slides: original[0].slides,
+        slideCount: original[0].slideCount,
+        thumbnailUrl: original[0].thumbnailUrl,
+        status: 'draft',
+      })
+      .returning();
+
+    return result[0];
+  } catch (error) {
+    console.error("[Database] Failed to duplicate slide deck:", error);
+    throw error;
   }
 }
