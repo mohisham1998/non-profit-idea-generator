@@ -85,7 +85,7 @@ export default function ProgramEvaluation() {
       name: 'التقييم التشاركي',
       description: 'تقييم يشارك فيه المستفيدون والشركاء',
       icon: FileText,
-      color: 'from-amber-500 to-orange-500',
+      color: 'from-primary to-cyan-500',
     },
   ];
 

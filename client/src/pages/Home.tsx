@@ -236,6 +236,12 @@ export default function Home() {
     
     const slides = convertExistingDataToSlides(slideData);
     useSlideStore.getState().setCards(slides);
+    // Queue image generation for slides with image slots
+    slides.forEach((s) => {
+      if (s.images?.some((img) => img.status === 'loading')) {
+        useSlideStore.getState().requestImageGeneration(s.id);
+      }
+    });
 
     // Store proposed names and seed the presentation name from the first name
     if (currentIdea.proposedNames) {
@@ -611,7 +617,7 @@ export default function Home() {
 
   const handleStartChat = () => {
     if (!generatedIdea) return;
-    startConversationMutation.mutate({ ideaId: generatedIdea.id });
+    startConversationMutation.mutate({ ideaId: (generatedIdea as GeneratedIdea).id });
   };
 
   const handleCloseChat = () => {
@@ -636,7 +642,7 @@ export default function Home() {
   const saveLogFrameChanges = () => {
     if (!generatedIdea || !logFrameEditData) return;
     updateLogFrameMutation.mutate({
-      id: generatedIdea.id,
+      id: (generatedIdea as GeneratedIdea).id,
       logFrame: logFrameEditData,
     });
   };
@@ -775,7 +781,7 @@ export default function Home() {
 
   const handleEvaluate = () => {
     if (!generatedIdea) return;
-    evaluateMutation.mutate({ id: generatedIdea.id });
+    evaluateMutation.mutate({ id: (generatedIdea as GeneratedIdea).id });
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -787,7 +793,7 @@ export default function Home() {
     if (!generatedIdea) return;
     const content = `
 الفكرة:
-${generatedIdea.idea}
+${(generatedIdea as GeneratedIdea).idea}
 
 الهدف:
 ${generatedIdea.objective}
@@ -828,12 +834,12 @@ ${generatedIdea.expectedResults}
     if (!generatedIdea) return;
     const content = `
 وصف البرنامج/المبادرة:
-${generatedIdea.programDescription}
+${(generatedIdea as GeneratedIdea).programDescription}
 
 ═══════════════════════════════════════
 
 الفكرة:
-${generatedIdea.idea}
+${(generatedIdea as GeneratedIdea).idea}
 
 ═══════════════════════════════════════
 
@@ -879,18 +885,18 @@ ${generatedIdea.expectedResults}
   };
 
   const sections = generatedIdea ? [
-    { icon: Sparkles, title: "المسميات المقترحة", content: generatedIdea.proposedNames ? (typeof generatedIdea.proposedNames === 'string' ? generatedIdea.proposedNames : JSON.stringify(generatedIdea.proposedNames)) : "", color: "text-purple-600", key: "proposedNames" as const },
+    { icon: Sparkles, title: "المسميات المقترحة", content: (generatedIdea as GeneratedIdea).proposedNames ? (typeof (generatedIdea as GeneratedIdea).proposedNames === 'string' ? (generatedIdea as GeneratedIdea).proposedNames : JSON.stringify((generatedIdea as GeneratedIdea).proposedNames)) : "", color: "text-purple-600", key: "proposedNames" as const },
     { icon: Eye, title: "الرؤية", content: generatedIdea.vision || "", color: "text-cyan-600", key: "vision" as const },
     { icon: Crosshair, title: "الهدف العام", content: generatedIdea.generalObjective || "", color: "text-rose-600", key: "generalObjective" as const },
     { icon: ListChecks, title: "الأهداف التفصيلية", content: generatedIdea.detailedObjectives || "", color: "text-orange-600", key: "detailedObjectives" as const },
-    { icon: Lightbulb, title: "الفكرة", content: generatedIdea.idea, color: "text-amber-600", key: "idea" as const },
+    { icon: Lightbulb, title: "الفكرة", content: (generatedIdea as GeneratedIdea).idea, color: "text-amber-600", key: "idea" as const },
     { icon: FileText, title: "مبررات البرنامج", content: generatedIdea.justifications, color: "text-purple-600", key: "justifications" as const },
     { icon: Star, title: "المميزات", content: generatedIdea.features, color: "text-yellow-600", key: "features" as const },
     { icon: Zap, title: "نقاط القوة", content: generatedIdea.strengths, color: "text-green-600", key: "strengths" as const },
     { icon: Package, title: "المخرجات", content: generatedIdea.outputs, color: "text-indigo-600", key: "outputs" as const, hasTypeToggle: true },
     { icon: TrendingUp, title: "النتائج المتوقعة", content: generatedIdea.expectedResults, color: "text-teal-600", key: "expectedResults" as const },
     { icon: AlertTriangle, title: "المخاطر", content: generatedIdea.risks || "", color: "text-red-600", key: "risks" as const },
-  ] : [];
+  ] : [] as { icon: React.ComponentType<{ className?: string }>; title: string; content: string; color: string; key: string; hasTypeToggle?: boolean }[];
 
   const handleStartEdit = (sectionKey: string, content: string) => {
     setEditingSection(sectionKey);
@@ -905,7 +911,7 @@ ${generatedIdea.expectedResults}
   const handleSaveEdit = (sectionKey: string) => {
     if (!generatedIdea || !editContent.trim()) return;
     updateMutation.mutate({
-      id: generatedIdea.id,
+      id: (generatedIdea as GeneratedIdea).id,
       [sectionKey]: editContent.trim(),
     });
   };
@@ -914,7 +920,7 @@ ${generatedIdea.expectedResults}
     if (!generatedIdea) return;
     setRegeneratingSection(sectionKey);
     regenerateMutation.mutate({
-      id: generatedIdea.id,
+      id: (generatedIdea as GeneratedIdea).id,
       section: sectionKey,
     });
   };
@@ -936,80 +942,24 @@ ${generatedIdea.expectedResults}
 
   // If there's a generated idea, show the SlideBuilder full-screen
   if (generatedIdea) {
-    return <SlideBuilder generatedIdeaId={generatedIdea.id} />;
+    return <SlideBuilder generatedIdeaId={(generatedIdea as GeneratedIdea).id} />;
   }
 
   return (
-    <div className="min-h-screen relative">
-      {/* خلفية 3D متحركة */}
-      <Background3D />
-      
-      {/* Header */}
-      <Navbar />
-
-      {/* الشريط الجانبي للتنقل السريع */}
-      <Sidebar
-        hasIdea={!!generatedIdea}
-        hasEvaluation={showEvaluation && !!evaluation}
-        hasKPIs={showKPIs && !!kpisData}
-        hasBudget={showBudget && !!budgetData}
-        hasSWOT={showSWOT && !!swotData}
-        hasLogFrame={showLogFrame && !!logFrameData}
-        hasTimeline={showTimeline && !!timelineData}
-        hasPMDPro={showPMDPro && !!pmdproData}
-        hasDesignThinking={showDesignThinking && !!designThinkingData}
-        onSectionClick={(sectionId) => {
-          const element = document.getElementById(`section-${sectionId}`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }}
-      />
-
-      {/* Hero Section */}
-      <section className="py-10 md:py-16 lg:py-24 gradient-subtle">
-        <div className="container px-4 md:px-6">
-          <div className="max-w-3xl mx-auto text-center">
-{/* إطار زجاجي يجمع العناصر */}
-            <div className="inline-block px-6 md:px-8 py-3 md:py-4 mb-6 md:mb-8 rounded-2xl backdrop-blur-md bg-gradient-to-r from-orange-100/60 via-amber-50/60 to-orange-100/60 border border-orange-200/50 shadow-lg animate-scale-in opacity-0" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-              <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-gray-600 mb-2">
-                <Sparkles className="h-3 w-3 md:h-4 md:w-4 animate-pulse-soft text-primary" />
-                مدعوم بالذكاء الاصطناعي
-              </div>
-              <p className="text-base md:text-lg lg:text-xl font-semibold bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 bg-clip-text text-transparent">
-                وداعاً للأفكار المكررة.. مرحباً بالابتكار
-              </p>
-            </div>
-            
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 md:mb-6 leading-tight animate-slide-up opacity-0" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-              حوّل أفكارك إلى برامج
-              <br />
-              <span className="text-primary">ومبادرات متكاملة</span>
-            </h2>
-            <p className="text-sm md:text-base lg:text-lg text-muted-foreground mb-6 md:mb-8 leading-relaxed px-2 animate-slide-up opacity-0" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-              أداة ذكية تساعد المنظمات غير الربحية على تطوير أفكار البرامج والمبادرات
-              بشكل احترافي ومتكامل، من الفكرة إلى النتائج المتوقعة.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="py-8 md:py-12 lg:py-16">
-        <div className="container px-4 md:px-6">
-          <div className="max-w-4xl mx-auto">
-            {/* Input Card */}
-            <Card className="mb-6 md:mb-8 shadow-lg border-0 glass glass-card-enhanced card-3d animate-slide-up opacity-0" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
-              <CardHeader className="p-4 md:p-6">
-                <CardTitle className="text-lg md:text-xl flex items-center gap-2">
-                  <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                  وصف البرنامج أو المبادرة
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  اكتب وصفاً موجزاً للبرنامج أو المبادرة التي تريد تطويرها
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 p-4 md:p-6 pt-0 md:pt-0">
+    <>
+      <div className="w-full max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
+        {/* Main Content */}
+        <Card className="border-0 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900">
+          <CardHeader className="border-b border-slate-200 dark:border-slate-800 pb-4">
+            <CardTitle className="text-xl flex items-center gap-2 text-slate-800 dark:text-slate-200">
+              <Sparkles className="h-5 w-5 text-cyan-500" />
+              توليد فكرة برنامج أو مبادرة
+            </CardTitle>
+            <CardDescription className="text-slate-500 dark:text-slate-400">
+              اكتب وصفاً موجزاً، وسيقوم الذكاء الاصطناعي ببناء نموذج متكامل للفكرة
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
                 <Textarea
                   placeholder="مثال: برنامج تدريبي لتأهيل الشباب في مجال ريادة الأعمال الاجتماعية..."
                   value={programDescription}
@@ -1092,7 +1042,7 @@ ${generatedIdea.expectedResults}
                         onClick={handleGenerate}
                         disabled={generateMutation.isPending || generateMultipleMutation.isPending || programDescription.trim().length < 10}
                         size="sm"
-                        className="gradient-primary border-0 gap-2 px-4 md:px-6 text-xs md:text-sm btn-animated"
+                        className="gap-2 px-4 md:px-6 text-xs md:text-sm bg-cyan-600 hover:bg-cyan-700 text-white"
                       >
                         {generateMutation.isPending ? (
                           <>
@@ -1116,25 +1066,26 @@ ${generatedIdea.expectedResults}
                     </Button>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
 
-            {/* Progress Indicator for Idea Generation */}
-            {(generateMutation.isPending || generateMultipleMutation.isPending) && (
-              <ProgressIndicator
-                isGenerating={true}
-                title="جاري توليد المشروع"
-                icon={<Lightbulb className="h-5 w-5 text-white" />}
-                stages={[
-                  { label: "تحليل وصف البرنامج", duration: 3000 },
-                  { label: "توليد الأفكار الإبداعية", duration: 4000 },
-                  { label: "صياغة الأهداف والرؤية", duration: 3500 },
-                  { label: "تحديد المخرجات والنتائج", duration: 3000 },
-                  { label: "اقتراح الأسماء المناسبة", duration: 2500 },
-                  { label: "المراجعة النهائية", duration: 2000 }
-                ]}
-              />
-            )}
+        {/* Progress Indicator for Idea Generation */}
+        {(generateMutation.isPending || generateMultipleMutation.isPending) && (
+          <ProgressIndicator
+            isGenerating={true}
+            title="جاري توليد المشروع"
+            icon={<Lightbulb className="h-5 w-5 text-white" />}
+            stages={[
+              { label: "تحليل وصف البرنامج", duration: 3000 },
+              { label: "توليد الأفكار الإبداعية", duration: 4000 },
+              { label: "صياغة الأهداف والرؤية", duration: 3500 },
+              { label: "تحديد المخرجات والنتائج", duration: 3000 },
+              { label: "اقتراح الأسماء المناسبة", duration: 2500 },
+              { label: "المراجعة النهائية", duration: 2000 }
+            ]}
+          />
+        )}
+      </div>
 
             {/* Results - This section is now handled by the full-screen SlideBuilder above */}
             {generatedIdea && (
@@ -1188,7 +1139,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateKPIsMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateKPIsMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateKPIsMutation.isPending}
                       className="gap-1 text-xs px-2"
                     >
@@ -1202,7 +1153,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && estimateBudgetMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && estimateBudgetMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={estimateBudgetMutation.isPending}
                       className="gap-1 text-xs px-2"
                     >
@@ -1216,7 +1167,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateSWOTMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateSWOTMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateSWOTMutation.isPending}
                       className="gap-1 text-xs px-2"
                     >
@@ -1230,7 +1181,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateLogFrameMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateLogFrameMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateLogFrameMutation.isPending}
                       className="gap-1 text-xs px-2"
                     >
@@ -1244,7 +1195,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateTimelineMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateTimelineMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateTimelineMutation.isPending}
                       className="gap-1 text-xs px-2"
                     >
@@ -1258,7 +1209,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && improveIdeaMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && improveIdeaMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={improveIdeaMutation.isPending}
                       className="gap-1 text-xs px-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border-purple-300"
                     >
@@ -1272,7 +1223,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generatePMDProMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && generatePMDProMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={generatePMDProMutation.isPending}
                       className="gap-1 text-xs px-2 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 border-indigo-300"
                     >
@@ -1286,7 +1237,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateDesignThinkingMutation.mutate({ id: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateDesignThinkingMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateDesignThinkingMutation.isPending}
                       className="gap-1 text-xs px-2 bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20 border-pink-300"
                     >
@@ -1314,7 +1265,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateMarketingMutation.mutate({ ideaId: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateMarketingMutation.mutate({ ideaId: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateMarketingMutation.isPending}
                       className="gap-1 text-xs px-2 bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border-orange-300"
                     >
@@ -1328,7 +1279,7 @@ ${generatedIdea.expectedResults}
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => generatedIdea && generateValueAddMutation.mutate({ ideaId: generatedIdea.id })}
+                      onClick={() => generatedIdea && generateValueAddMutation.mutate({ ideaId: (generatedIdea as GeneratedIdea).id })}
                       disabled={generateValueAddMutation.isPending}
                       className="gap-1 text-xs px-2 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border-emerald-300"
                     >
@@ -1407,7 +1358,7 @@ ${generatedIdea.expectedResults}
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleStartEdit(section.key, section.content)}
+                                  onClick={() => handleStartEdit(section.key, typeof section.content === 'string' ? section.content : (Array.isArray(section.content) ? section.content.join('\n') : ''))}
                                   className="h-8 w-8 p-0"
                                   title="تعديل"
                                 >
@@ -1416,7 +1367,7 @@ ${generatedIdea.expectedResults}
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleRegenerate(section.key)}
+                                  onClick={() => handleRegenerate(section.key as 'proposedNames' | 'vision' | 'generalObjective' | 'detailedObjectives' | 'idea' | 'objective' | 'justifications' | 'features' | 'strengths' | 'outputs' | 'expectedResults' | 'risks')}
                                   disabled={regeneratingSection === section.key}
                                   className="h-8 w-8 p-0"
                                   title="إعادة توليد"
@@ -1430,7 +1381,7 @@ ${generatedIdea.expectedResults}
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => copyToClipboard(section.content, section.title)}
+                                  onClick={() => copyToClipboard(typeof section.content === 'string' ? section.content : (Array.isArray(section.content) ? section.content.join('\n') : ''), section.title)}
                                   className="h-8 w-8 p-0"
                                   title="نسخ"
                                 >
@@ -1475,10 +1426,10 @@ ${generatedIdea.expectedResults}
                               </Button>
                             </div>
                           </div>
-                        ) : section.key === 'proposedNames' && generatedIdea.proposedNames ? (
+                        ) : section.key === 'proposedNames' && (generatedIdea as GeneratedIdea).proposedNames ? (
                           <div className="space-y-4">
                             {/* عرض الاسم الرسمي المختار إن وجد */}
-                            {generatedIdea.selectedName && (
+                            {(generatedIdea as GeneratedIdea).selectedName && (
                               <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 rounded-xl border-2 border-amber-400 dark:border-amber-600 shadow-md">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
@@ -1487,13 +1438,13 @@ ${generatedIdea.expectedResults}
                                     </div>
                                     <div>
                                       <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">الاسم الرسمي للمبادرة</p>
-                                      <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{generatedIdea.selectedName}</p>
+                                      <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{(generatedIdea as GeneratedIdea).selectedName}</p>
                                     </div>
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => clearSelectedNameMutation.mutate({ id: generatedIdea.id })}
+                                    onClick={() => clearSelectedNameMutation.mutate({ id: (generatedIdea as GeneratedIdea).id })}
                                     disabled={clearSelectedNameMutation.isPending}
                                     className="text-amber-600 hover:text-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                                   >
@@ -1510,11 +1461,10 @@ ${generatedIdea.expectedResults}
                             {/* عرض الأسماء المقترحة */}
                             <div className="grid grid-cols-1 gap-2">
                               {(() => {
-                                const names = typeof generatedIdea.proposedNames === 'string' 
-                                  ? JSON.parse(generatedIdea.proposedNames) 
-                                  : generatedIdea.proposedNames;
+                                const p = (generatedIdea as GeneratedIdea).proposedNames;
+                                const names = typeof p === 'string' ? JSON.parse(p) : (Array.isArray(p) ? p : []);
                                 return (names as string[]).map((name: string, idx: number) => {
-                                  const isSelected = generatedIdea.selectedName === name;
+                                  const isSelected = (generatedIdea as GeneratedIdea).selectedName === name;
                                   return (
                                     <div 
                                       key={idx} 
@@ -1525,7 +1475,7 @@ ${generatedIdea.expectedResults}
                                       }`}
                                       onClick={() => {
                                         if (!isSelected && !selectNameMutation.isPending) {
-                                          selectNameMutation.mutate({ id: generatedIdea.id, selectedName: name });
+                                          selectNameMutation.mutate({ id: (generatedIdea as GeneratedIdea).id, selectedName: name });
                                         }
                                       }}
                                     >
@@ -1584,10 +1534,10 @@ ${generatedIdea.expectedResults}
                           </div>
                         ) : (
                           <p className="text-foreground leading-relaxed whitespace-pre-line">
-                            {isDetailedView 
-                              ? section.content 
-                              : section.content.split('\n').slice(0, 3).join('\n') + (section.content.split('\n').length > 3 ? '...' : '')
-                            }
+                            {(() => {
+                              const contentStr = typeof section.content === 'string' ? section.content : (Array.isArray(section.content) ? section.content.join('\n') : '');
+                              return isDetailedView ? contentStr : contentStr.split('\n').slice(0, 3).join('\n') + (contentStr.split('\n').length > 3 ? '...' : '');
+                            })()}
                           </p>
                         )}
                       </CardContent>
@@ -2417,7 +2367,7 @@ ${generatedIdea.expectedResults}
                             size="sm"
                             onClick={async () => {
                               const { exportGanttToPDF } = await import('@/lib/exportMethodologyPDF');
-                              await exportGanttToPDF(timelineData, generatedIdea?.programDescription || 'مشروع');
+                              await exportGanttToPDF(timelineData, (generatedIdea as GeneratedIdea | null)?.programDescription || 'مشروع');
                               toast.success('تم تصدير PDF بنجاح');
                             }}
                             className="text-white hover:bg-white/20 gap-2"
@@ -2743,7 +2693,7 @@ ${generatedIdea.expectedResults}
                           onClick={() => {
                             if (generatedIdea && improvementsData) {
                               applyImprovementsMutation.mutate({
-                                id: generatedIdea.id,
+                                id: (generatedIdea as GeneratedIdea).id,
                                 improvedVision: improvementsData.improvedVision,
                                 improvedObjectives: improvementsData.improvedObjectives,
                               });
@@ -2850,7 +2800,7 @@ ${generatedIdea.expectedResults}
                             size="sm"
                             onClick={async () => {
                               const { exportPMDProToPDF } = await import('@/lib/exportMethodologyPDF');
-                              await exportPMDProToPDF(pmdproData, generatedIdea?.programDescription || 'مشروع');
+                              await exportPMDProToPDF(pmdproData, (generatedIdea as GeneratedIdea | null)?.programDescription || 'مشروع');
                               toast.success('تم تصدير PDF بنجاح');
                             }}
                             className="text-white hover:bg-white/20 gap-2"
@@ -3166,7 +3116,7 @@ ${generatedIdea.expectedResults}
                             size="sm"
                             onClick={async () => {
                               const { exportDesignThinkingToPDF } = await import('@/lib/exportMethodologyPDF');
-                              await exportDesignThinkingToPDF(designThinkingData, generatedIdea?.programDescription || 'مشروع');
+                              await exportDesignThinkingToPDF(designThinkingData, (generatedIdea as GeneratedIdea | null)?.programDescription || 'مشروع');
                               toast.success('تم تصدير PDF بنجاح');
                             }}
                             className="text-white hover:bg-white/20 gap-2"
@@ -3598,13 +3548,13 @@ ${generatedIdea.expectedResults}
                   <CardContent>
                     <Button
                       onClick={() => {
-                        if (!generatedIdea.isApproved) {
-                          approveMutation.mutate({ id: generatedIdea.id });
+                        if (!(generatedIdea as GeneratedIdea).isApproved) {
+                          approveMutation.mutate({ id: (generatedIdea as GeneratedIdea).id });
                         } else {
                           toast.info("المشروع معتمد بالفعل");
                         }
                       }}
-                      disabled={approveMutation.isPending || !!generatedIdea.isApproved}
+                      disabled={approveMutation.isPending || !!(generatedIdea as GeneratedIdea).isApproved}
                       className="w-full gradient-primary border-0 gap-2 py-6 text-lg"
                     >
                       {approveMutation.isPending ? (
@@ -3612,7 +3562,7 @@ ${generatedIdea.expectedResults}
                           <Loader2 className="h-5 w-5 animate-spin" />
                           جاري الاعتماد...
                         </>
-                      ) : generatedIdea.isApproved ? (
+                      ) : (generatedIdea as GeneratedIdea).isApproved ? (
                         <>
                           <CheckCircle className="h-5 w-5" />
                           مشروع معتمد
@@ -3741,42 +3691,6 @@ ${generatedIdea.expectedResults}
               </div>
             )}
 
-            {/* Features Section */}
-            {!generatedIdea && !showMultipleMode && (
-              <div className="grid md:grid-cols-3 gap-6 mt-12">
-                <Card className="card-hover border-0 shadow-md text-center p-6 glass-card animate-slide-up opacity-0" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4 icon-bounce">
-                    <Lightbulb className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">أفكار إبداعية</h3>
-                  <p className="text-sm text-muted-foreground">
-                    توليد أفكار مبتكرة ومناسبة لطبيعة المنظمات غير الربحية
-                  </p>
-                </Card>
-                <Card className="card-hover border-0 shadow-md text-center p-6 glass-card animate-slide-up opacity-0" style={{ animationDelay: '0.7s', animationFillMode: 'forwards' }}>
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4 icon-bounce">
-                    <Target className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">محتوى متكامل</h3>
-                  <p className="text-sm text-muted-foreground">
-                    من الأهداف إلى المخرجات والنتائج المتوقعة بشكل شامل
-                  </p>
-                </Card>
-                <Card className="card-hover border-0 shadow-md text-center p-6 glass-card animate-slide-up opacity-0" style={{ animationDelay: '0.8s', animationFillMode: 'forwards' }}>
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4 icon-bounce">
-                    <History className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">حفظ واسترجاع</h3>
-                  <p className="text-sm text-muted-foreground">
-                    احفظ أفكارك وارجع إليها في أي وقت من سجل الأفكار
-                  </p>
-                </Card>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* عرض المحتوى التسويقي */}
       {showMarketing && marketingData && (
         <MarketingContent
@@ -3802,13 +3716,6 @@ ${generatedIdea.expectedResults}
           onClose={() => setShowValueAdd(false)}
         />
       )}
-
-      {/* Footer */}
-      <footer className="py-8 border-t bg-card/50">
-        <div className="container text-center text-sm text-muted-foreground">
-          <p>مسار الابتكار - حلول مبتكرة للمنظمات غير الربحية</p>
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }

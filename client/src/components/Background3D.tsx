@@ -49,7 +49,7 @@ export default function Background3D() {
       >
         <defs>
           <linearGradient id="waveGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#f97316" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="var(--primary, #0891b2)" stopOpacity="0.15" />
             <stop offset="50%" stopColor="#fb923c" stopOpacity="0.1" />
             <stop offset="100%" stopColor="#fdba74" stopOpacity="0.08" />
           </linearGradient>
@@ -119,7 +119,7 @@ export default function Background3D() {
       <div 
         className="absolute w-80 h-80 rounded-full opacity-[0.03] transition-transform duration-200 ease-out"
         style={{ 
-          background: 'radial-gradient(circle, #f97316 0%, transparent 70%)',
+          background: 'radial-gradient(circle, var(--primary, #0891b2) 0%, transparent 70%)',
           bottom: `${25 + circle2Offset * 0.05}%`,
           left: '25%',
           transform: `translateY(${-circle2Offset}px) scale(${1 + scrollY * 0.0001})`

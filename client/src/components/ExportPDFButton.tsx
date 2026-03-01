@@ -535,7 +535,7 @@ export function ExportPDFButton({
       onClick={generatePDF}
       disabled={isExporting}
       variant="outline"
-      className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 hover:from-red-600 hover:to-orange-600"
+      className="gap-2 bg-primary text-white border-0 hover:bg-primary/90"
     >
       {isExporting ? (
         <>

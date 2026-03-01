@@ -157,7 +157,7 @@ export default function AdminDashboard() {
   // التحقق من صلاحيات المدير
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-emerald-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="text-muted-foreground">جاري التحقق من الصلاحيات...</p>
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
 
   if (!user || user.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md glass glass-card-enhanced border-0 shadow-2xl">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">

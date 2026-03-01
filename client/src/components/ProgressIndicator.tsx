@@ -81,45 +81,39 @@ export function ProgressIndicator({
   const currentStage = stages[currentStageIndex];
 
   return (
-    <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg">
+    <Card className="border-2 border-primary/20 bg-white dark:bg-card shadow-md">
       <CardContent className="py-8 px-6">
         <div className="space-y-6">
           {/* العنوان والأيقونة */}
           <div className="flex items-center justify-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl animate-pulse">
+            <div className="p-3 bg-primary rounded-xl animate-pulse">
               {icon}
             </div>
-            <h3 className="text-xl font-bold text-purple-900">{title}</h3>
+            <h3 className="text-xl font-bold text-primary">{title}</h3>
           </div>
 
           {/* شريط التقدم الإجمالي */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-purple-700 font-medium">التقدم الإجمالي</span>
-              <span className="text-purple-900 font-bold text-lg">
+              <span className="text-muted-foreground font-medium">التقدم الإجمالي</span>
+              <span className="text-primary font-bold text-lg">
                 {Math.round(progress)}%
               </span>
             </div>
-            <Progress 
-              value={progress} 
-              className="h-3 bg-purple-100"
-            />
+            <Progress value={progress} className="h-3" />
           </div>
 
           {/* المرحلة الحالية */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 justify-center">
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-              <span className="text-indigo-700 font-medium">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-primary font-medium">
                 {currentStage?.label || "جاري المعالجة..."}
               </span>
             </div>
 
             {/* شريط تقدم المرحلة الحالية */}
-            <Progress 
-              value={stageProgress} 
-              className="h-2 bg-indigo-100"
-            />
+            <Progress value={stageProgress} className="h-2" />
           </div>
 
           {/* قائمة المراحل */}
@@ -131,7 +125,7 @@ export function ProgressIndicator({
                   index < currentStageIndex
                     ? "text-green-600 font-medium"
                     : index === currentStageIndex
-                    ? "text-indigo-700 font-semibold"
+                    ? "text-primary font-semibold"
                     : "text-gray-400"
                 }`}
               >
@@ -140,7 +134,7 @@ export function ProgressIndicator({
                     index < currentStageIndex
                       ? "bg-green-500"
                       : index === currentStageIndex
-                      ? "bg-indigo-500 animate-pulse"
+                      ? "bg-primary animate-pulse"
                       : "bg-gray-300"
                   }`}
                 />
@@ -153,7 +147,7 @@ export function ProgressIndicator({
           </div>
 
           {/* رسالة تشجيعية */}
-          <div className="text-center text-sm text-purple-600 italic mt-4">
+          <div className="text-center text-sm text-muted-foreground italic mt-4">
             الرجاء الانتظار... نقوم بتوليد محتوى عالي الجودة لك
           </div>
         </div>

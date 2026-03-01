@@ -346,7 +346,7 @@ export default function ProjectDashboard() {
 
   if (authLoading || ideaLoading || dashboardLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-orange-50">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-primary/5">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
@@ -357,7 +357,7 @@ export default function ProjectDashboard() {
 
   if (!idea || !dashboard) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-orange-50">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-primary/5">
         <Navbar />
         <div className="container py-8 text-center">
           <h1 className="text-2xl font-bold text-gray-800">لم يتم العثور على المشروع</h1>
@@ -384,7 +384,7 @@ export default function ProjectDashboard() {
   const highRisks = risks.filter(r => r.severity === 'high' || r.severity === 'critical').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-primary/5">
       <Navbar />
       
       <div className="container py-8 max-w-7xl mx-auto">

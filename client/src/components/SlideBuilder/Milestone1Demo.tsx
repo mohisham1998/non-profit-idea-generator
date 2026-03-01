@@ -40,6 +40,11 @@ export function Milestone1Demo() {
     
     const slides = convertExistingDataToSlides(mockData);
     useSlideStore.getState().setCards(slides);
+    slides.forEach((s) => {
+      if (s.images?.some((img) => img.status === 'loading')) {
+        useSlideStore.getState().requestImageGeneration(s.id);
+      }
+    });
   }, []);
   
   const runTests = () => {

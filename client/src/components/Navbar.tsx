@@ -81,7 +81,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="border-b border-cyan-200/30 bg-gradient-to-r from-orange-400/95 via-amber-300/95 to-cyan-400/95 backdrop-blur-md sticky top-0 z-50 shadow-md shadow-cyan-400/15">
+      <header className="border-b border-cyan-200/30 bg-gradient-to-r from-primary/95 via-primary/80 to-cyan-400/95 backdrop-blur-md sticky top-0 z-50 shadow-md shadow-cyan-400/15">
         <div className="container mx-auto px-3 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo */}
@@ -139,7 +139,7 @@ export default function Navbar() {
               </Link>
 
               {user?.role === "admin" && (
-                <Link href="/admin">
+                <Link href="/admin/dashboard">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -216,7 +216,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Menu */}
       <div
-        className={`lg:hidden fixed top-14 sm:top-16 right-0 left-0 z-50 bg-gradient-to-b from-orange-400/98 via-amber-400/98 to-orange-500/98 backdrop-blur-md shadow-xl transform transition-all duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-14 sm:top-16 right-0 left-0 z-50 bg-gradient-to-b from-primary/98 via-primary/90 to-cyan-500/98 backdrop-blur-md shadow-xl transform transition-all duration-300 ease-in-out ${
           mobileMenuOpen 
             ? "translate-y-0 opacity-100" 
             : "-translate-y-full opacity-0 pointer-events-none"

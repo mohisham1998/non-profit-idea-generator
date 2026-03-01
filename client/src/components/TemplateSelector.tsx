@@ -40,10 +40,10 @@ export default function TemplateSelector({
           {/* القالب الكلاسيكي - زخارف ذهبية */}
           {template.id === 'classic' && (
             <>
-              <div className="absolute top-3 left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
-              <div className="absolute top-3 bottom-3 left-3 w-0.5 bg-gradient-to-b from-transparent via-amber-400 to-transparent" />
-              <div className="absolute top-3 bottom-3 right-3 w-0.5 bg-gradient-to-b from-transparent via-amber-400 to-transparent" />
+              <div className="absolute top-3 left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
+              <div className="absolute top-3 bottom-3 left-3 w-0.5 bg-gradient-to-b from-transparent via-primary to-transparent" />
+              <div className="absolute top-3 bottom-3 right-3 w-0.5 bg-gradient-to-b from-transparent via-primary to-transparent" />
               {/* زخرفة الزوايا */}
               <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-amber-400 rounded-tl-sm" />
               <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-amber-400 rounded-tr-sm" />
@@ -68,7 +68,7 @@ export default function TemplateSelector({
           {/* القالب الرسمي - خطوط رسمية */}
           {template.id === 'formal' && (
             <>
-              <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500" />
+              <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-primary/80 to-primary" />
               <div className="absolute top-0 left-0 right-0 h-1 bg-white/20" />
               {/* شعار رسمي */}
               <div className="absolute top-3 right-3 w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center">
