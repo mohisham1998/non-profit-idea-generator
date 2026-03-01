@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, varchar, serial, bigint } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, varchar, serial, bigint } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
@@ -453,3 +453,41 @@ export const generatedImages = pgTable("generated_images", {
 
 export type GeneratedImage = typeof generatedImages.$inferSelect;
 export type InsertGeneratedImage = typeof generatedImages.$inferInsert;
+
+/**
+ * Layout selection logs - audit trail for AI layout decisions
+ */
+export const layoutSelectionLogs = pgTable("layout_selection_logs", {
+  id: serial("id").primaryKey(),
+  slideDeckId: integer("slideDeckId").notNull().references(() => slideDecks.id, { onDelete: "cascade" }),
+  slideIndex: integer("slideIndex").notNull(),
+  slideType: varchar("slideType", { length: 50 }),
+  contentAnalysis: jsonb("contentAnalysis").notNull(),
+  candidateLayouts: text("candidateLayouts").array().notNull(),
+  candidateScores: jsonb("candidateScores"),
+  selectedLayoutId: varchar("selectedLayoutId", { length: 100 }).notNull(),
+  selectionMethod: varchar("selectionMethod", { length: 20 }).default("scoring").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LayoutSelectionLog = typeof layoutSelectionLogs.$inferSelect;
+export type InsertLayoutSelectionLog = typeof layoutSelectionLogs.$inferInsert;
+
+/**
+ * Export jobs - track PDF/PPTX export operations
+ */
+export const exportJobs = pgTable("export_jobs", {
+  id: serial("id").primaryKey(),
+  slideDeckId: integer("slideDeckId").notNull().references(() => slideDecks.id, { onDelete: "cascade" }),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  format: varchar("format", { length: 10 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  progress: integer("progress").default(0).notNull(),
+  outputUrl: text("outputUrl"),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type ExportJob = typeof exportJobs.$inferSelect;
+export type InsertExportJob = typeof exportJobs.$inferInsert;

@@ -47,6 +47,9 @@ export interface SlideImage {
   size: ImageSize;
 }
 
+/** Overflow strategy when content exceeds layout capacity */
+export type OverflowStrategy = 'none' | 'denser-layout' | 'expanded' | 'split';
+
 export interface SlideCard {
   id: string;
   type: CardType;
@@ -64,6 +67,22 @@ export interface SlideCard {
     layoutType?: string;
     imagePlacements?: Array<{ position: string; size: string; contentPrompt: string }>;
     estimatedHeight?: 'standard' | 'tall' | 'multi-slide';
+  };
+  /** Smart layout ID from registry (e.g. cover-hero, stat-blocks-3) — when set, renders via layout component */
+  layoutId?: string;
+  /** Content analysis result used for layout selection */
+  contentAnalysis?: { itemCount: number; patterns?: string[] };
+  /** Overflow handling strategy when content exceeds layout capacity */
+  overflowStrategy?: OverflowStrategy;
+  /** Layout selection log payload for US6 — persisted with deck, used for layout_selection_logs */
+  layoutSelectionLogPayload?: {
+    slideType?: string;
+    contentAnalysis: Record<string, unknown>;
+    candidateLayouts: string[];
+    candidateScores?: Record<string, number>;
+    selectedLayoutId: string;
+    selectionMethod: 'scoring' | 'fallback' | 'ai';
+    overflowStrategy?: string;
   };
 }
 
@@ -139,6 +158,9 @@ interface SlideStore {
 }
 
 // Default theme
+/** Maximum slides per deck */
+export const MAX_SLIDES_PER_DECK = 30;
+
 const defaultTheme: PresentationTheme = {
   id: 'default',
   name: 'Default Theme',
@@ -186,13 +208,14 @@ export const useSlideStore = create<SlideStore>((set, get) => ({
   
   // Card Management Actions
   addCard: (card) => {
+    const currentCount = get().cards.length;
+    if (currentCount >= MAX_SLIDES_PER_DECK) return;
     const newCard: SlideCard = {
       ...card,
       id: nanoid(),
-      order: get().cards.length,
+      order: currentCount,
       style: card.style || defaultCardStyle,
     };
-    
     set((state) => ({
       cards: [...state.cards, newCard],
     }));
@@ -280,7 +303,8 @@ export const useSlideStore = create<SlideStore>((set, get) => ({
 
   // Bulk Operations
   setCards: (cards) => {
-    set({ cards: cards.map((card, index) => ({ ...card, order: index })) });
+    const trimmed = cards.slice(0, MAX_SLIDES_PER_DECK);
+    set({ cards: trimmed.map((card, index) => ({ ...card, order: index })) });
   },
   
   clearCards: () => {

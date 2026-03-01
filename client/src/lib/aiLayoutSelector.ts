@@ -1,3 +1,6 @@
+import { analyzeContent } from './contentAnalyzer';
+import { selectLayout as selectLayoutByAnalysis } from './layoutSelector';
+
 /** Layout selection result (AI or rule-based). */
 export interface LayoutSelection {
   layout: 'cards' | 'list' | 'grid' | 'numbered' | 'quote' | 'timeline' | 'compact' | 'table' | 'two-column' | 'quadrant' | 'flow' | 'stat-blocks';
@@ -195,4 +198,56 @@ export function selectLayoutWithImages(
   }
   const estimatedHeight = predictSlideHeight(content, blockCount);
   return validateLayoutDecision({ ...decision, estimatedHeight });
+}
+
+/** Layout selection result with logging payload for layout_selection_logs */
+export interface LayoutSelectionLogPayload {
+  slideType?: string;
+  contentAnalysis: Record<string, unknown>;
+  candidateLayouts: string[];
+  candidateScores?: Record<string, number>;
+  selectedLayoutId: string;
+  selectionMethod: 'scoring' | 'fallback' | 'ai';
+  overflowStrategy?: string;
+}
+
+/**
+ * Select layout ID from registry using content analysis + layout selector.
+ * Use this when generating slides to assign layoutId for registry-based rendering.
+ * Returns layoutId, contentAnalysis, and logPayload for layout selection logging (US6).
+ */
+export function selectRegistryLayout(
+  content: string,
+  slideType?: string
+): {
+  layoutId: string;
+  contentAnalysis: { itemCount: number; patterns: string[] };
+  logPayload: LayoutSelectionLogPayload;
+} {
+  const analysis = analyzeContent(content, slideType);
+  const result = selectLayoutByAnalysis(analysis, slideType);
+  const contentAnalysis = {
+    itemCount: analysis.itemCount,
+    patterns: analysis.patterns ?? [],
+  };
+  const logPayload: LayoutSelectionLogPayload = {
+    slideType,
+    contentAnalysis: { ...contentAnalysis, structureType: analysis.structureType, densityScore: analysis.densityScore },
+    candidateLayouts: result.candidates,
+    candidateScores: result.candidates.reduce(
+      (acc, id) => {
+        acc[id] = id === result.layoutId ? result.score : result.score - 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
+    selectedLayoutId: result.layoutId,
+    selectionMethod: result.method === 'fallback' ? 'fallback' : 'scoring',
+    overflowStrategy: result.overflowStrategy,
+  };
+  return {
+    layoutId: result.layoutId,
+    contentAnalysis,
+    logPayload,
+  };
 }

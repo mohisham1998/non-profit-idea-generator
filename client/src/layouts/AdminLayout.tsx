@@ -68,6 +68,7 @@ const navSections: NavSection[] = [
   {
     title: 'أخرى',
     items: [
+      { name: 'الملف الشخصي', href: '/profile', icon: User },
       { name: 'العلامة التجارية', href: '/admin/branding', icon: Palette },
       { name: 'الإعدادات', href: '/admin/settings', icon: Settings },
     ],

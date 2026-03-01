@@ -27,6 +27,7 @@ import SustainabilityList from "./pages/SustainabilityList";
 import ResearchStudy from "./pages/ResearchStudy";
 import ResearchList from "./pages/ResearchList";
 import ColorSettings from "./pages/ColorSettings";
+import Profile from "./pages/Profile";
 import { Milestone1Demo } from "./components/SlideBuilder/Milestone1Demo";
 
 function Router() {
@@ -55,6 +56,7 @@ function Router() {
       <Route path={"/research"} component={() => <ProtectedRoute component={ResearchList} />} />
       <Route path={"/research/:id"} component={() => <ProtectedRoute component={ResearchStudy} />} />
       <Route path={"/color-settings"} component={() => <ProtectedRoute component={ColorSettings} />} />
+      <Route path={"/profile"} component={() => <ProtectedRoute component={() => <AdminLayout><Profile /></AdminLayout>} />} />
       <Route path={"/milestone1-test"} component={() => <ProtectedRoute component={Milestone1Demo} />} />
       <Route path={"/404"} component={NotFound} />
       <Route path="" component={Login} />

@@ -1,7 +1,7 @@
 import { SlideCard, CardType, defaultCardStyle } from '@/stores/slideStore';
 import { nanoid } from 'nanoid';
 import { parseLines, shouldSplitContent, splitContentForSlides, getLayoutForContent } from './slideLayoutEngine';
-import { selectLayoutWithImages } from './aiLayoutSelector';
+import { selectLayoutWithImages, selectRegistryLayout } from './aiLayoutSelector';
 
 /**
  * Converts existing component data from Home.tsx state into SlideCard format
@@ -61,16 +61,19 @@ export function convertExistingDataToSlides(data: ExistingComponentData): SlideC
   
   // 1. Add cover slide (clean white design)
   if (data.generatedIdea) {
+    const coverContent = {
+      title: data.generatedIdea.selectedName || data.generatedIdea.programDescription.substring(0, 100),
+      subtitle: data.generatedIdea.programDescription,
+      targetAudience: data.generatedIdea.targetAudience,
+      duration: data.generatedIdea.duration,
+    };
+    const coverText = [coverContent.title, coverContent.subtitle].filter(Boolean).join('\n');
+    const { layoutId, contentAnalysis, logPayload } = selectRegistryLayout(coverText, 'cover');
     slides.push({
       id: nanoid(),
       type: 'cover',
       title: 'Cover Slide',
-      content: {
-        title: data.generatedIdea.selectedName || data.generatedIdea.programDescription.substring(0, 100),
-        subtitle: data.generatedIdea.programDescription,
-        targetAudience: data.generatedIdea.targetAudience,
-        duration: data.generatedIdea.duration,
-      },
+      content: coverContent,
       style: {
         ...defaultCardStyle,
         backgroundColor: '#ffffff',
@@ -78,6 +81,9 @@ export function convertExistingDataToSlides(data: ExistingComponentData): SlideC
         contentAlignment: 'top',
       },
       order: order++,
+      layoutId,
+      contentAnalysis,
+      layoutSelectionLogPayload: logPayload,
     });
   }
   
@@ -202,6 +208,8 @@ function createSlide(
     size: p.size as 'full' | 'half' | 'third' | 'quarter',
   }));
 
+  const { layoutId, contentAnalysis, logPayload } = selectRegistryLayout(text, contentTypeForLayout);
+
   return {
     id: nanoid(),
     type,
@@ -217,6 +225,9 @@ function createSlide(
     order,
     layoutConfig: { layoutType: layoutDecision.layoutType, imagePlacements: layoutDecision.imagePlacements, estimatedHeight: layoutDecision.estimatedHeight },
     images: images.length > 0 ? images : undefined,
+    layoutId,
+    contentAnalysis,
+    layoutSelectionLogPayload: logPayload,
   };
 }
 

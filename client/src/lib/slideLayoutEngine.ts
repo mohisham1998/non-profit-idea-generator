@@ -64,6 +64,39 @@ export function splitSlideContent(
   return { shouldSplit: true, chunks };
 }
 
+/** Expansion factor for height expansion strategy */
+const HEIGHT_EXPANSION_FACTOR = 1.3;
+
+/** Check if content height exceeds layout capacity (height expansion strategy). */
+export function needsHeightExpansion(
+  estimatedHeight: number,
+  layoutEstimatedHeight: number
+): boolean {
+  return estimatedHeight > layoutEstimatedHeight * HEIGHT_EXPANSION_FACTOR;
+}
+
+/** Continuation indicator text for split slides */
+export const CONTINUATION_INDICATOR = '— تتمة —';
+
+/** Split content with continuation indicator for multi-slide overflow. */
+export function splitWithContinuation(
+  items: string[],
+  maxPerSlide: number
+): { chunks: string[][]; hasContinuation: boolean } {
+  if (items.length <= maxPerSlide) {
+    return { chunks: [items], hasContinuation: false };
+  }
+  const chunks: string[][] = [];
+  for (let i = 0; i < items.length; i += maxPerSlide) {
+    const chunk = items.slice(i, i + maxPerSlide);
+    if (chunks.length > 0) {
+      chunk.unshift(CONTINUATION_INDICATOR);
+    }
+    chunks.push(chunk);
+  }
+  return { chunks, hasContinuation: true };
+}
+
 /** Get layout selection for a content type. */
 export function getLayoutForContent(contentType: string, content?: string, blockCount?: number) {
   return selectLayout(contentType, content, blockCount);

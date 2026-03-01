@@ -1,4 +1,5 @@
 import { ENV } from "./env";
+import { jsonrepair } from "jsonrepair";
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
 
@@ -57,6 +58,8 @@ export type ToolChoice =
 
 export type InvokeParams = {
   messages: Message[];
+  /** US9: Model ID from OpenRouter (e.g. openai/gpt-4o). Falls back to default if not set. */
+  model?: string;
   tools?: Tool[];
   toolChoice?: ToolChoice;
   tool_choice?: ToolChoice;
@@ -281,7 +284,7 @@ const normalizeResponseFormat = ({
 
 /**
  * Robustly extract a JSON object from an LLM response string.
- * Handles markdown code fences, leading/trailing text, and common quirks.
+ * Handles markdown code fences, leading/trailing text, truncated responses, and common quirks.
  */
 export function extractJSON(raw: string): any {
   if (!raw) throw new Error("Empty LLM response");
@@ -295,7 +298,7 @@ export function extractJSON(raw: string): any {
   // 2. Try direct parse first
   try { return JSON.parse(cleaned); } catch {}
 
-  // 3. Find the outermost JSON object or array
+  // 3. Find the outermost JSON object or array and try to parse
   const firstBrace = cleaned.indexOf('{');
   const firstBracket = cleaned.indexOf('[');
   let start = -1;
@@ -314,6 +317,12 @@ export function extractJSON(raw: string): any {
     }
   }
 
+  // 4. Try jsonrepair for truncated/malformed JSON (common when LLM hits token limit)
+  try {
+    const repaired = jsonrepair(cleaned);
+    return JSON.parse(repaired);
+  } catch {}
+
   throw new Error(`Could not parse LLM response as JSON. Raw (first 200): ${raw.slice(0, 200)}`);
 }
 
@@ -331,8 +340,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     response_format,
   } = params;
 
+  const defaultModel = "google/gemini-3-flash-preview";
   const payload: Record<string, unknown> = {
-    model: "google/gemini-3-flash-preview",
+    model: params.model || defaultModel,
     messages: messages.map(normalizeMessage),
   };
 

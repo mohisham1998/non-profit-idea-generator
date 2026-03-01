@@ -6,7 +6,8 @@ import { StylePanel } from './StylePanel';
 import { ThemePanel } from './ThemePanel';
 import { ProposedNamesModal } from './ProposedNamesModal';
 import { Button } from '@/components/ui/button';
-import { Download, Settings, Play, Gauge, DollarSign, Grid3X3, Table2, Calendar, FolderKanban, Lightbulb, Megaphone, Loader2, X, ArrowLeft, PanelLeftClose, PanelLeftOpen, Sparkles, Palette, FileText, FileDown } from 'lucide-react';
+import { Download, Settings, Play, Gauge, DollarSign, Grid3X3, Table2, Calendar, FolderKanban, Lightbulb, Megaphone, Loader2, X, ArrowLeft, PanelLeftClose, PanelLeftOpen, Sparkles, Palette, FileText, FileDown, Save } from 'lucide-react';
+import { ModelSelector } from '@/components/ModelSelector';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { trpc } from '@/lib/trpc';
@@ -14,19 +15,24 @@ import { toast } from 'sonner';
 import { useLocation } from 'wouter';
 import { useSlideExport } from '@/hooks/useSlideExport';
 import { useImageGenerationQueue } from '@/hooks/useImageGenerationQueue';
+import { ExportProgress } from '@/components/ExportProgress';
+import { AIAgentsPanel } from './AIAgentsPanel';
 
 interface SlideBuilderProps {
   initialData?: any;
   generatedIdeaId?: number;
+  /** US7: Deck ID when loading from DeckLibrary; used for save/update */
+  deckId?: number;
 }
 
-export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps) {
+export function SlideBuilder({ initialData, generatedIdeaId, deckId }: SlideBuilderProps) {
   const [, setLocation] = useLocation();
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [stylingCardId, setStylingCardId] = useState<string | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [namesModalOpen, setNamesModalOpen] = useState(false);
   const [themePanelOpen, setThemePanelOpen] = useState(false);
+  const [agentsPanelOpen, setAgentsPanelOpen] = useState(false);
   
   const { 
     cards, 
@@ -38,7 +44,16 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
     updateCard,
     removeCard,
   } = useSlideStore();
-  const { exportToPDF, exportToPPTX } = useSlideExport();
+  const {
+    exportToPDF,
+    exportToPPTX,
+    exportStatus,
+    exportFormat,
+    exportProgress,
+    exportErrorMessage,
+    retryExport,
+    clearExportStatus,
+  } = useSlideExport();
   useImageGenerationQueue();
 
   // Handle action buttons
@@ -77,7 +92,30 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
     setLocation('/');
     window.location.reload();
   };
-  
+
+  // US7: Save deck (create or update) with layoutId, layoutConfig, overflowStrategy
+  const createDeckMutation = trpc.adminDashboard.createDeck.useMutation({
+    onSuccess: () => toast.success('تم حفظ العرض بنجاح'),
+    onError: (e) => toast.error(e.message),
+  });
+  const updateDeckMutation = trpc.adminDashboard.updateDeck.useMutation({
+    onSuccess: () => toast.success('تم تحديث العرض بنجاح'),
+    onError: (e) => toast.error(e.message),
+  });
+  const handleSaveDeck = () => {
+    const { cards: c, presentationName: title } = useSlideStore.getState();
+    if (!c.length) {
+      toast.error('لا توجد شرائح لحفظها');
+      return;
+    }
+    const slidesJson = JSON.stringify(c);
+    if (deckId) {
+      updateDeckMutation.mutate({ id: deckId, title, slides: slidesJson });
+    } else {
+      createDeckMutation.mutate({ title: title || 'عرض تقديمي', slides: slidesJson });
+    }
+  };
+
   // Mutations for generating additional components
   const generateKPIsMutation = trpc.ideas.generateKPIs.useMutation({
     onSuccess: (data) => {
@@ -356,11 +394,31 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
               </Button>
             </div>
             
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleSaveDeck}
+              disabled={createDeckMutation.isPending || updateDeckMutation.isPending}
+            >
+              {(createDeckMutation.isPending || updateDeckMutation.isPending) ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              حفظ العرض
+            </Button>
+            <ModelSelector />
             <Button variant="outline" size="sm" className="gap-2">
               <Play className="h-4 w-4" />
               عرض
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setAgentsPanelOpen(true)}
+            >
               <Settings className="h-4 w-4" />
               الإعدادات
             </Button>
@@ -372,11 +430,11 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={async () => { try { await exportToPDF(); toast.success('تم تصدير PDF بنجاح'); } catch { toast.error('فشل تصدير PDF'); } }}>
+                <DropdownMenuItem onClick={() => exportToPDF().catch(() => {})}>
                   <FileText className="h-4 w-4 mr-2" />
                   تصدير PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={async () => { try { await exportToPPTX(); toast.success('تم تصدير PowerPoint بنجاح'); } catch { toast.error('فشل تصدير PowerPoint'); } }}>
+                <DropdownMenuItem onClick={() => exportToPPTX().catch(() => {})}>
                   <FileDown className="h-4 w-4 mr-2" />
                   تصدير PowerPoint
                 </DropdownMenuItem>
@@ -454,12 +512,25 @@ export function SlideBuilder({ initialData, generatedIdeaId }: SlideBuilderProps
 
         {/* Theme Panel - cover & logo settings */}
         {themePanelOpen && <ThemePanel onClose={() => setThemePanelOpen(false)} />}
+
+        {/* AI Agents Panel - image & slide maker model selection */}
+        {agentsPanelOpen && <AIAgentsPanel onClose={() => setAgentsPanelOpen(false)} />}
       </div>
 
       {/* Proposed Names Modal — rendered inside the root div so it's always on top */}
       {namesModalOpen && (
         <ProposedNamesModal onClose={() => setNamesModalOpen(false)} />
       )}
+
+      {/* T109: Export progress UI with status and retry */}
+      <ExportProgress
+        status={exportStatus}
+        format={exportFormat}
+        progress={exportProgress}
+        errorMessage={exportErrorMessage}
+        onRetry={retryExport}
+        onDismiss={clearExportStatus}
+      />
     </div>
   );
 }

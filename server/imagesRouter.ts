@@ -21,6 +21,7 @@ export const imagesRouter = router({
         slideDeckId: z.number().optional(),
         contentType: z.string().min(1),
         keywords: z.array(z.string()).min(1).max(10),
+        modelId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -46,7 +47,7 @@ export const imagesRouter = router({
       }
 
       try {
-        const result = await generateSlideImage(prompt);
+        const result = await generateSlideImage(prompt, input.modelId);
         let buffer: Buffer;
 
         if (result.base64) {
@@ -99,6 +100,23 @@ export const imagesRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Image not found" });
       }
       return `data:image/png;base64,${row.imageData.toString("base64")}`;
+    }),
+
+  /** Test an image generation model with a minimal prompt */
+  testModel: protectedProcedure
+    .input(z.object({ modelId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await generateSlideImage(
+          "Simple test: a single blue circle on white background.",
+          input.modelId
+        );
+        const hasImage = !!(result.url || result.base64);
+        return { success: hasImage, modelId: input.modelId };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Test failed";
+        return { success: false, modelId: input.modelId, error: msg };
+      }
     }),
 
   getQuota: protectedProcedure.query(async ({ ctx }) => {

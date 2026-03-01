@@ -2,11 +2,13 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { imagesRouter } from "./imagesRouter";
+import { layoutLogsRouter } from "./layoutLogsRouter";
+import { exportRouter } from "./exportRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from '@trpc/server';
 import { invokeLLM, extractJSON } from "./_core/llm";
-import { createIdea, getUserIdeas, searchUserIdeas, getIdeaById, deleteIdea, countUserIdeas, updateIdea, createConversation, getIdeaConversations, getConversationById, addMessage, getConversationMessages, getAllUsers, getUsersByStatus, updateUserStatus, getUserStats, getUserById, getPermissions, updatePermissions, getAllSystemFeatures, toggleSystemFeature, getAllUsersWithPermissions, updateUserPermission, updateAllUserPermissions, getOrCreateProjectTracking, updateProjectTracking, createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask, createBudgetItem, getBudgetItems, updateBudgetItem, deleteBudgetItem, createKpiItem, getKpiItems, updateKpiItem, deleteKpiItem, createRiskItem, getRiskItems, updateRiskItem, deleteRiskItem, getDashboardLayout, saveDashboardLayout, resetDashboardLayout } from "./db";
+import { createIdea, getUserIdeas, searchUserIdeas, getIdeaById, deleteIdea, countUserIdeas, updateIdea, createConversation, getIdeaConversations, getConversationById, addMessage, getConversationMessages, getAllUsers, getUsersByStatus, updateUserStatus, getUserStats, getUserById, getPermissions, updatePermissions, getAllSystemFeatures, toggleSystemFeature, getAllUsersWithPermissions, updateUserPermission, updateAllUserPermissions, getOrCreateProjectTracking, updateProjectTracking, createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask, createBudgetItem, getBudgetItems, updateBudgetItem, deleteBudgetItem, createKpiItem, getKpiItems, updateKpiItem, deleteKpiItem, createRiskItem, getRiskItems, updateRiskItem, deleteRiskItem, getDashboardLayout, saveDashboardLayout, resetDashboardLayout, getSelectedModelForUser } from "./db";
 import { createResearchStudy, getResearchStudyByIdeaId, getResearchStudyById, updateResearchStudy, deleteResearchStudy } from "./dbResearch";
 import { getDb } from "./db";
 import { users, ideas } from "../drizzle/schema";
@@ -15,6 +17,8 @@ import { eq, sql } from "drizzle-orm";
 export const appRouter = router({
   system: systemRouter,
   images: imagesRouter,
+  layoutLogs: layoutLogsRouter,
+  exportJobs: exportRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -339,7 +343,9 @@ ${additionalInfo.length > 0 ? `\nمعلومات إضافية:\n${additionalInfo.
 قم بتوليد محتوى شامل لهذا البرنامج/المبادرة.`;
 
         try {
+          const modelId = await getSelectedModelForUser(ctx.user.id);
           const response = await invokeLLM({
+            model: modelId ?? undefined,
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
@@ -347,7 +353,7 @@ ${additionalInfo.length > 0 ? `\nمعلومات إضافية:\n${additionalInfo.
             response_format: {
               type: "json_object",
             },
-            maxTokens: 12000,
+            maxTokens: 16384,
           });
 
           const content = response.choices[0]?.message?.content;
@@ -385,6 +391,33 @@ ${additionalInfo.length > 0 ? `\nمعلومات إضافية:\n${additionalInfo.
         } catch (error) {
           console.error("[Ideas] Failed to generate idea:", error);
           throw new Error("حدث خطأ أثناء توليد الفكرة. يرجى المحاولة مرة أخرى.");
+        }
+      }),
+
+    /** Test Slide maker model with minimal prompt */
+    testModel: protectedProcedure
+      .input(z.object({ modelId: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM, extractJSON } = await import("./_core/llm");
+        try {
+          const response = await invokeLLM({
+            model: input.modelId,
+            messages: [
+              { role: "system", content: "Respond with valid JSON only. No other text." },
+              { role: "user", content: "Respond with: {\"ok\": true}" },
+            ],
+            response_format: { type: "json_object" },
+            maxTokens: 50,
+          });
+          const content = response.choices[0]?.message?.content;
+          if (!content || typeof content !== "string") {
+            return { success: false, modelId: input.modelId, error: "No response" };
+          }
+          extractJSON(content);
+          return { success: true, modelId: input.modelId };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Test failed";
+          return { success: false, modelId: input.modelId, error: msg };
         }
       }),
 
@@ -3852,6 +3885,16 @@ ${challenges ? `التحديات: ${challenges}` : ''}
       }),
 
     /**
+     * جلب عرض شرائح بالمعرف (US7 - deck loading with layoutId, layoutConfig, overflowStrategy)
+     */
+    getDeck: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const { getSlideDeckById } = await import('./db');
+        return await getSlideDeckById(input.id, ctx.user.id);
+      }),
+
+    /**
      * إنشاء عرض شرائح جديد
      */
     createDeck: protectedProcedure
@@ -3861,14 +3904,25 @@ ${challenges ? `التحديات: ${challenges}` : ''}
         slides: z.string().optional(), // JSON string
       }))
       .mutation(async ({ input, ctx }) => {
-        const { createSlideDeck } = await import('./db');
-        return await createSlideDeck({
+        const { createSlideDeck, insertLayoutLogsFromSlides } = await import('./db');
+        let slideCount = 0;
+        if (input.slides) {
+          try {
+            const arr = JSON.parse(input.slides);
+            slideCount = Array.isArray(arr) ? arr.length : 0;
+          } catch {}
+        }
+        const deck = await createSlideDeck({
           userId: ctx.user.id,
           title: input.title,
           description: input.description || null,
           slides: input.slides || null,
-          slideCount: 0,
+          slideCount,
         });
+        if (deck && input.slides) {
+          await insertLayoutLogsFromSlides(deck.id, input.slides);
+        }
+        return deck;
       }),
 
     /**
@@ -3883,9 +3937,22 @@ ${challenges ? `التحديات: ${challenges}` : ''}
         status: z.enum(['draft', 'published', 'archived']).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { updateSlideDeck } = await import('./db');
-        const { id, ...updates } = input;
-        return await updateSlideDeck(id, ctx.user.id, updates);
+        const { updateSlideDeck, deleteLayoutLogsForDeck, insertLayoutLogsFromSlides } = await import('./db');
+        const { id, slides: slidesInput, ...rest } = input;
+        let slideCount: number | undefined;
+        if (slidesInput) {
+          try {
+            const arr = JSON.parse(slidesInput);
+            slideCount = Array.isArray(arr) ? arr.length : 0;
+          } catch {}
+        }
+        const updates = { ...rest, ...(slidesInput && { slides: slidesInput }), ...(slideCount !== undefined && { slideCount }) };
+        const deck = await updateSlideDeck(id, ctx.user.id, updates);
+        if (slidesInput) {
+          await deleteLayoutLogsForDeck(id);
+          await insertLayoutLogsFromSlides(id, slidesInput);
+        }
+        return deck;
       }),
 
     /**

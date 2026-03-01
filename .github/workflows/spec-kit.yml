@@ -1,0 +1,81 @@
+name: Spec Kit Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '.specify/**'
+      - '**.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.specify/**'
+  issues:
+    types: [opened, edited, labeled]
+
+jobs:
+  validate-specs:
+    runs-on: ubuntu-latest
+    name: Validate Spec Kit Structure
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Validate Constitution
+      run: |
+        if [ ! -f ".specify/memory/constitution.md" ]; then
+          echo "❌ Constitution file is missing!"
+          exit 1
+        fi
+        echo "✅ Constitution exists"
+        
+    - name: Validate Spec Structure
+      run: |
+        SPEC_DIRS=$(find .specify/memory/specs -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+        if [ "$SPEC_DIRS" -eq 0 ]; then
+          echo "⚠️ No specs found in .specify/memory/specs/"
+        else
+          echo "✅ Found $SPEC_DIRS spec directories"
+        fi
+        
+    - name: Check Required Templates
+      run: |
+        REQUIRED_TEMPLATES=("spec-template.md" "plan-template.md" "tasks-template.md" "constitution-template.md")
+        for template in "${REQUIRED_TEMPLATES[@]}"; do
+          if [ ! -f ".specify/templates/$template" ]; then
+            echo "⚠️ Template missing: $template"
+          else
+            echo "✅ Template exists: $template"
+          fi
+        done
+        
+    - name: Generate Spec Report
+      run: |
+        echo "## Spec Kit Status Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Constitution" >> $GITHUB_STEP_SUMMARY
+        echo "- Location: \`.specify/memory/constitution.md\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Active Specs" >> $GITHUB_STEP_SUMMARY
+        for spec_dir in .specify/memory/specs/*/; do
+          if [ -d "$spec_dir" ]; then
+            spec_name=$(basename "$spec_dir")
+            echo "- **$spec_name**" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+
+  sync-labels:
+    runs-on: ubuntu-latest
+    name: Sync Spec Labels
+    if: github.event_name == 'issues'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Sync spec labels with constitution
+      run: |
+        echo "Syncing labels based on constitution principles..."
+        # This can be expanded to automatically create/update labels
+        # based on principles defined in the constitution

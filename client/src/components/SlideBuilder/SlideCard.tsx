@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { SlideCard as SlideCardType, type SlideImage } from '@/stores/slideStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SlideCard as SlideCardType, type SlideImage as SlideImageType, useSlideStore } from '@/stores/slideStore';
 import { Card } from '@/components/ui/card';
 import { ImagePlaceholder } from './ImagePlaceholder';
+import { SlideImage } from './SlideImage';
+import { getLayout, isValidLayoutId } from '@/lib/layoutRegistry';
+import { contentToBlocks } from '@/lib/contentToBlocks';
+import type { PresentationTheme as LayoutTheme } from '@/lib/types/layouts';
 import { Button } from '@/components/ui/button';
 import { 
   Gauge, 
@@ -57,6 +62,20 @@ interface SlideCardProps {
 
 export function SlideCard({ card, isSelected, isEditing, onClick, primaryColor: themePrimaryColor, logo, logoPosition, logoSize, applyLogoToAllSlides, globalBackgroundColor, globalBackgroundImage, applyGlobalBackground, coverSlide, onEdit, onStyle, onAIChat, onSave, onCancel }: SlideCardProps) {
   const { style, title, type, content } = card;
+  const theme = useSlideStore((s) => s.theme);
+
+  /** Map store theme to layout PresentationTheme */
+  const layoutTheme: LayoutTheme = {
+    id: theme.id,
+    name: theme.name,
+    logo: theme.logo,
+    logoPosition: theme.logoPosition,
+    logoSize: theme.logoSize,
+    primaryColor: themePrimaryColor ?? theme.primaryColor,
+    secondaryColor: theme.secondaryColor,
+    accentColor: theme.accentColor,
+    fontFamily: theme.fontFamily,
+  };
 
   // Draft state for editing
   const [draftTitle, setDraftTitle] = useState(title);
@@ -1206,11 +1225,11 @@ export function SlideCard({ card, isSelected, isEditing, onClick, primaryColor: 
         )}
       </div>
 
-      {/* 16:9 aspect ratio container (FR-1). Tall slides get extra min-height for content. id for html-to-image export */}
+      {/* 16:9 aspect ratio container (FR-1). Extended heights to reduce scrolling. */}
       <div
         id={`slide-${card.id}`}
         className={`aspect-video w-full rounded-xl overflow-hidden shadow-lg bg-white ${
-          card.layoutConfig?.estimatedHeight === 'tall' ? 'min-h-[340px]' : card.layoutConfig?.estimatedHeight === 'multi-slide' ? 'min-h-[400px]' : 'min-h-[280px]'
+          card.layoutConfig?.estimatedHeight === 'tall' ? 'min-h-[480px]' : card.layoutConfig?.estimatedHeight === 'multi-slide' ? 'min-h-[560px]' : 'min-h-[420px]'
         }`}
       >
       <Card
@@ -1260,8 +1279,8 @@ export function SlideCard({ card, isSelected, isEditing, onClick, primaryColor: 
             <img src={logo} alt="Logo" className="w-full h-full object-contain" />
           </div>
         )}
-        {/* Card Header */}
-        {type !== 'cover' && (
+        {/* Card Header — hidden when using registry layout (layout renders title) */}
+        {type !== 'cover' && !(card.layoutId && isValidLayoutId(card.layoutId)) && (
           <div className={`flex items-center gap-3 px-6 py-4 ${getHeaderColor()}`}>
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               {getIcon()}
@@ -1288,43 +1307,78 @@ export function SlideCard({ card, isSelected, isEditing, onClick, primaryColor: 
           const isTopBanner = imgPos === 'top-banner';
           const imagePanel = card.images && card.images.length > 0 && (
             <div className={`flex-shrink-0 ${imgWidth} min-w-[120px] p-4 flex items-center justify-center`}>
-              {card.images.map((img: SlideImage, idx: number) => (
-                <div key={img.id || idx} className="w-full h-full min-h-[100px] rounded-lg overflow-hidden">
-                  {img.status === 'loading' ? (
-                    <ImagePlaceholder
-                      gradientFrom={themePrimaryColor || '#0891b2'}
-                      gradientTo={themePrimaryColor ? `${themePrimaryColor}cc` : '#0e7490'}
-                      iconName={type === 'kpis' ? 'Gauge' : type === 'budget' ? 'DollarSign' : type === 'swot' ? 'Target' : 'Image'}
-                      size="medium"
-                    />
-                  ) : img.status === 'ready' && img.url ? (
-                    <img src={img.url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImagePlaceholder
-                      gradientFrom={themePrimaryColor || '#0891b2'}
-                      gradientTo={themePrimaryColor ? `${themePrimaryColor}cc` : '#0e7490'}
-                      iconName="ImageOff"
-                      size="medium"
-                    />
-                  )}
-                </div>
+              {card.images.map((img: SlideImageType, idx: number) => (
+                <SlideImage
+                  key={img.id || idx}
+                  image={img}
+                  primaryColor={themePrimaryColor || '#0891b2'}
+                  iconName={type === 'kpis' ? 'Gauge' : type === 'budget' ? 'DollarSign' : type === 'swot' ? 'Target' : 'Image'}
+                  onRetry={(imageId) => useSlideStore.getState().requestImageGeneration(imageId)}
+                />
               ))}
             </div>
           );
-          const contentDiv = (
-            <div
-              className={card.images?.length && !isTopBanner ? 'flex-1 min-w-0 overflow-auto' : ''}
-              style={
-                !card.images?.length && style.contentAlignment === 'center'
-                  ? { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '180px' }
-                  : !card.images?.length && style.contentAlignment === 'bottom'
-                  ? { display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '180px' }
-                  : undefined
-              }
-            >
-              {renderContent()}
-            </div>
-          );
+          const contentDiv = (() => {
+            const useRegistryLayout = card.layoutId && isValidLayoutId(card.layoutId);
+            if (useRegistryLayout) {
+              const layoutDef = getLayout(card.layoutId!);
+              if (!layoutDef?.component) return <div className="flex-1 min-w-0 overflow-auto">{renderContent()}</div>;
+              const LayoutComponent = layoutDef.component;
+              const displayContent = isEditing ? draft ?? content : content;
+              const blocks = contentToBlocks(displayContent, title);
+              const layoutTitle = type === 'cover' && displayContent?.title ? displayContent.title : (isEditing ? draftTitle : title);
+              const images = (card.images ?? []).map((img) => ({
+                id: img.id,
+                url: img.url,
+                status: img.status,
+                position: img.position,
+                size: img.size,
+              }));
+              const config = {
+                imagePlacements: card.layoutConfig?.imagePlacements ?? [],
+                columns: 1,
+                rows: 1,
+              };
+              return (
+                <div className={card.images?.length && !isTopBanner ? 'flex-1 min-w-0 overflow-auto' : ''}>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={card.layoutId ?? 'default'}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      className="w-full"
+                    >
+                      <LayoutComponent
+                        title={layoutTitle}
+                        blocks={blocks}
+                        theme={layoutTheme}
+                        images={images}
+                        config={config}
+                        isEditing={isEditing}
+                        onContentChange={undefined}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              );
+            }
+            return (
+              <div
+                className={card.images?.length && !isTopBanner ? 'flex-1 min-w-0 overflow-auto' : ''}
+                style={
+                  !card.images?.length && style.contentAlignment === 'center'
+                    ? { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '180px' }
+                    : !card.images?.length && style.contentAlignment === 'bottom'
+                    ? { display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '180px' }
+                    : undefined
+                }
+              >
+                {renderContent()}
+              </div>
+            );
+          })();
           return (
             <div
               className={`flex flex-1 min-h-0 ${card.images?.length && !isTopBanner ? 'flex-row' : ''} ${isTopBanner ? 'flex-col' : ''} ${textSizeCls}`}

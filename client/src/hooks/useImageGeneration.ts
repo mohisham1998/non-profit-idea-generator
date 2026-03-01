@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useSlideStore } from "@/stores/slideStore";
+import { getSelectedImageModel } from "@/lib/imageModels";
 import { toast } from "sonner";
 
 export function useImageGeneration() {
@@ -18,11 +19,12 @@ export function useImageGeneration() {
     ) => {
       setLoading(true);
       try {
-        const result = await generateMutation.mutateAsync({
+          const result = await generateMutation.mutateAsync({
           slideId,
           slideDeckId,
           contentType,
           keywords,
+          modelId: getSelectedImageModel() ?? undefined,
         });
 
         if (result.status === "completed" && result.dataUrl) {

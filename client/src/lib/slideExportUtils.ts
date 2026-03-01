@@ -1,70 +1,16 @@
 /**
  * Utilities for exporting SlideCard data to PDF and PPTX.
- * Supports html-to-image capture for pixel-perfect visual export.
+ * Uses native pdfExporter and pptxExporter (layout mappers, Cairo font, RTL).
+ * T112: Removed old html2canvas-based captureSlideAsImage.
  */
 import type { SlideCard } from '@/stores/slideStore';
 import { parseLines } from './slideLayoutEngine';
-import html2canvas from 'html2canvas';
 
 export interface ExportSlideData {
   title: string;
   bodyLines: string[];
   type: string;
   primaryColor?: string;
-}
-
-/** Visual export data (from html2canvas) */
-export interface ExportVisualData {
-  slideId: string;
-  imageDataUrl: string;
-  width: number;
-  height: number;
-  format: 'png' | 'jpeg';
-  quality: number;
-}
-
-/** Export manifest for visual export pipeline */
-export interface ExportManifest {
-  slides: ExportVisualData[];
-  metadata: { title: string; author: string; createdAt: Date; slideCount: number };
-  theme: { primaryColor: string; fontFamily: string };
-}
-
-/**
- * Captures a slide DOM element as PNG using html2canvas.
- * Uses 1920×1080 viewport, scale 2 for high-DPI export. CORS must be supported for external images.
- */
-export async function captureSlideAsImage(
-  element: HTMLElement,
-  options?: { scale?: number; quality?: number }
-): Promise<ExportVisualData> {
-  const scale = options?.scale ?? 2;
-  const quality = options?.quality ?? 0.95;
-
-  const canvas = await html2canvas(element, {
-    scale,
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: '#ffffff',
-    logging: false,
-    width: 1920,
-    height: 1080,
-    windowWidth: 1920,
-    windowHeight: 1080,
-    imageTimeout: 15000,
-  });
-
-  const dataUrl = canvas.toDataURL('image/png', quality);
-  const slideId = element.id?.replace('slide-', '') ?? '';
-
-  return {
-    slideId,
-    imageDataUrl: dataUrl,
-    width: canvas.width,
-    height: canvas.height,
-    format: 'png',
-    quality,
-  };
 }
 
 function safeStr(val: unknown): string {

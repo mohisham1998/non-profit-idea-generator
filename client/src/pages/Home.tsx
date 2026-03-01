@@ -202,12 +202,18 @@ export default function Home() {
   
   // حالة الشريط الجانبي
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // US7: Deck persistence - loaded deck ID when opening from DeckLibrary (?deck=123)
+  const [loadedDeckId, setLoadedDeckId] = useState<number | null>(null);
   
   // حالة محرر JSON
   const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
   const [jsonEditorTitle, setJsonEditorTitle] = useState("");
   const [jsonEditorData, setJsonEditorData] = useState<any>(null);
   const [jsonEditorSaveHandler, setJsonEditorSaveHandler] = useState<((data: any) => void) | null>(null);
+
+  // US7: Must call before any conditional returns (Rules of Hooks)
+  const cardsCount = useSlideStore((s) => s.cards.length);
 
   // Function to convert data and load into slide store
   const convertAndLoadSlides = (idea?: GeneratedIdea) => {
@@ -257,6 +263,31 @@ export default function Home() {
       }
     }
   };
+
+  // US7: Load deck when ?deck=123 (from DeckLibrary)
+  const deckIdFromUrl = (() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const v = params.get('deck');
+    const n = v ? parseInt(v, 10) : NaN;
+    return Number.isFinite(n) ? n : null;
+  })();
+  const { data: loadedDeck } = trpc.adminDashboard.getDeck.useQuery(
+    { id: deckIdFromUrl ?? 0 },
+    { enabled: !!deckIdFromUrl && !!isAuthenticated }
+  );
+  useEffect(() => {
+    if (!loadedDeck || !loadedDeck.slides) return;
+    try {
+      const slides = JSON.parse(loadedDeck.slides);
+      if (Array.isArray(slides) && slides.length > 0) {
+        useSlideStore.getState().setCards(slides);
+        useSlideStore.getState().setPresentationName(loadedDeck.title || 'عرض تقديمي');
+        setLoadedDeckId(loadedDeck.id);
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [loadedDeck]);
 
   const generateMutation = trpc.ideas.generate.useMutation({
     onSuccess: (data) => {
@@ -940,9 +971,12 @@ ${generatedIdea.expectedResults}
     );
   }
 
-  // If there's a generated idea, show the SlideBuilder full-screen
+  // US7: If generated idea or loaded deck, show SlideBuilder full-screen
   if (generatedIdea) {
     return <SlideBuilder generatedIdeaId={(generatedIdea as GeneratedIdea).id} />;
+  }
+  if (loadedDeckId && cardsCount > 0) {
+    return <SlideBuilder deckId={loadedDeckId} />;
   }
 
   return (

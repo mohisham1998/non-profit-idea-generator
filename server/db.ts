@@ -1,7 +1,7 @@
 import { eq, desc, like, or, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { InsertUser, users, ideas, InsertIdea, Idea, conversations, messages, InsertConversation, Conversation, InsertMessage, Message, permissions, Permission, InsertPermission, systemFeatures, SystemFeature, InsertSystemFeature, projectTracking, ProjectTracking, InsertProjectTracking, projectTasks, ProjectTask, InsertProjectTask, budgetTracking, BudgetTracking, InsertBudgetTracking, kpiTracking, KpiTracking, InsertKpiTracking, riskTracking, RiskTracking, InsertRiskTracking, dashboardLayouts, DashboardLayout, InsertDashboardLayout, slideDecks, SlideDeck, InsertSlideDeck } from "../drizzle/schema";
+import { InsertUser, users, ideas, InsertIdea, Idea, conversations, messages, InsertConversation, Conversation, InsertMessage, Message, permissions, Permission, InsertPermission, systemFeatures, SystemFeature, InsertSystemFeature, projectTracking, ProjectTracking, InsertProjectTracking, projectTasks, ProjectTask, InsertProjectTask, budgetTracking, BudgetTracking, InsertBudgetTracking, kpiTracking, KpiTracking, InsertKpiTracking, riskTracking, RiskTracking, InsertRiskTracking, dashboardLayouts, DashboardLayout, InsertDashboardLayout, slideDecks, SlideDeck, InsertSlideDeck, layoutSelectionLogs } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -541,7 +541,13 @@ export async function getUserById(userId: number) {
   }
 }
 
-
+/** US9: Get user's selected AI model ID (OpenRouter). Returns null if not set. */
+export async function getSelectedModelForUser(userId: number): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select({ selectedModelId: users.selectedModelId }).from(users).where(eq(users.id, userId)).limit(1);
+  return row?.selectedModelId ?? null;
+}
 
 
 // دوال إدارة الصلاحيات
@@ -1410,6 +1416,25 @@ export async function getSlideDecks(userId: number) {
 }
 
 /**
+ * جلب عرض شرائح بالمعرف (لتحميل واستعادة layoutId, layoutConfig, overflowStrategy)
+ */
+export async function getSlideDeckById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const [deck] = await db
+      .select()
+      .from(slideDecks)
+      .where(and(eq(slideDecks.id, id), eq(slideDecks.userId, userId)))
+      .limit(1);
+    return deck ?? null;
+  } catch (e) {
+    console.error("[Database] Failed to get slide deck by id:", e);
+    return null;
+  }
+}
+
+/**
  * إنشاء عرض شرائح جديد
  */
 export async function createSlideDeck(deck: { userId: number; title: string; description: string | null; slides: string | null; slideCount?: number }) {
@@ -1441,7 +1466,7 @@ export async function createSlideDeck(deck: { userId: number; title: string; des
 /**
  * تحديث عرض شرائح
  */
-export async function updateSlideDeck(id: number, userId: number, updates: Partial<{ title: string; description: string | null; slides: string | null; status: 'draft' | 'published' | 'archived' }>) {
+export async function updateSlideDeck(id: number, userId: number, updates: Partial<{ title: string; description: string | null; slides: string | null; slideCount: number; status: 'draft' | 'published' | 'archived' }>) {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
@@ -1533,5 +1558,59 @@ export async function duplicateSlideDeck(id: number, userId: number) {
   } catch (error) {
     console.error("[Database] Failed to duplicate slide deck:", error);
     throw error;
+  }
+}
+
+/**
+ * Delete layout logs for a deck (before replacing with new logs on update).
+ */
+export async function deleteLayoutLogsForDeck(slideDeckId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.delete(layoutSelectionLogs).where(eq(layoutSelectionLogs.slideDeckId, slideDeckId));
+  } catch (e) {
+    console.warn("[Database] Failed to delete layout logs:", e);
+  }
+}
+
+/**
+ * Insert layout selection logs from slides JSON (US6).
+ * Parses slides and logs layout selections for slides with layoutSelectionLogPayload.
+ */
+export async function insertLayoutLogsFromSlides(slideDeckId: number, slidesJson: string | null): Promise<void> {
+  if (!slidesJson) return;
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const slides = JSON.parse(slidesJson) as Array<{
+      order?: number;
+      layoutSelectionLogPayload?: {
+        slideType?: string;
+        contentAnalysis: Record<string, unknown>;
+        candidateLayouts: string[];
+        candidateScores?: Record<string, number>;
+        selectedLayoutId: string;
+        selectionMethod: 'scoring' | 'fallback' | 'ai';
+      };
+    }>;
+    if (!Array.isArray(slides)) return;
+    for (let i = 0; i < slides.length; i++) {
+      const s = slides[i];
+      const payload = s?.layoutSelectionLogPayload;
+      if (!payload?.selectedLayoutId) continue;
+      await db.insert(layoutSelectionLogs).values({
+        slideDeckId,
+        slideIndex: s.order ?? i,
+        slideType: payload.slideType ?? null,
+        contentAnalysis: payload.contentAnalysis ?? {},
+        candidateLayouts: payload.candidateLayouts ?? [],
+        candidateScores: payload.candidateScores ?? null,
+        selectedLayoutId: payload.selectedLayoutId,
+        selectionMethod: payload.selectionMethod ?? 'scoring',
+      });
+    }
+  } catch (e) {
+    console.warn("[Database] Failed to insert layout logs from slides:", e);
   }
 }

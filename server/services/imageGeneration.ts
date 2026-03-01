@@ -5,7 +5,6 @@ import { ENV } from "../_core/env";
 import crypto from "crypto";
 
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-const DALL_E_MODEL = "openai/dall-e-3";
 
 const CONTENT_TYPE_STYLES: Record<string, string> = {
   kpis: "analytics dashboard, data visualization, office environment",
@@ -67,11 +66,16 @@ async function fetchWithRetry(url: string, options: RequestInit): Promise<Respon
   return fetch(url, options);
 }
 
-export async function generateSlideImage(prompt: string): Promise<GenerateImageResult> {
+export async function generateSlideImage(
+  prompt: string,
+  modelOverride?: string
+): Promise<GenerateImageResult> {
   const apiKey = ENV.openrouterApiKey;
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY is not configured for image generation");
   }
+
+  const model = modelOverride ?? ENV.openrouterImageModel;
 
   const response = await fetchWithRetry(`${OPENROUTER_BASE}/chat/completions`, {
     method: "POST",
@@ -82,7 +86,7 @@ export async function generateSlideImage(prompt: string): Promise<GenerateImageR
       "X-Title": "Nonprofit Ideas Generator",
     },
     body: JSON.stringify({
-      model: DALL_E_MODEL,
+      model,
       messages: [{ role: "user", content: prompt }],
       modalities: ["image"],
     }),
@@ -96,21 +100,26 @@ export async function generateSlideImage(prompt: string): Promise<GenerateImageR
   const data = (await response.json()) as {
     choices?: Array<{
       message?: {
-        content?: Array<{
-          type?: string;
-          image_url?: { url?: string };
-        }>;
+        content?: Array<{ type?: string; image_url?: { url?: string }; imageUrl?: { url?: string } }>;
+        images?: Array<{ type?: string; image_url?: { url?: string }; imageUrl?: { url?: string } }>;
       };
     }>;
   };
 
-  const content = data.choices?.[0]?.message?.content;
-  if (!Array.isArray(content) || content.length === 0) {
+  const msg = data.choices?.[0]?.message;
+  // OpenRouter FLUX/image models: images in message.images (not content)
+  const imgArray = Array.isArray(msg?.images) ? msg.images : msg?.content;
+  if (!Array.isArray(imgArray) || imgArray.length === 0) {
     throw new Error("No image in OpenRouter response");
   }
 
-  const imageBlock = content.find((c) => c.type === "image_url" && c.image_url?.url);
-  const url = imageBlock?.type === "image_url" ? imageBlock.image_url?.url : undefined;
+  const imageBlock = imgArray.find(
+    (c) => (c.type === "image_url" && (c.image_url?.url || (c as { imageUrl?: { url?: string } }).imageUrl?.url))
+  );
+  const url =
+    imageBlock?.type === "image_url"
+      ? (imageBlock.image_url?.url ?? (imageBlock as { imageUrl?: { url?: string } }).imageUrl?.url)
+      : undefined;
 
   if (!url) {
     throw new Error("Invalid image response from OpenRouter");

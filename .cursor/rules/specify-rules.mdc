@@ -1,0 +1,36 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# non-profit-idea-generator Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-03-01
+
+## Active Technologies
+
+- TypeScript (strict mode) + React 19, Vite 7, pptxgenjs, jsPDF, Tailwind CSS 4, tRPC 11, Drizzle ORM (007-gamma-smart-layout-engine)
+
+## Project Structure
+
+```text
+backend/
+frontend/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript (strict mode): Follow standard conventions
+
+## Recent Changes
+
+- 007-gamma-smart-layout-engine: Added TypeScript (strict mode) + React 19, Vite 7, pptxgenjs, jsPDF, Tailwind CSS 4, tRPC 11, Drizzle ORM
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
